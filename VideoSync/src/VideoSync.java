@@ -4,5 +4,4 @@ public class VideoSync
 	{
 		System.out.println("Hello, world!");
 	}
-
 }
