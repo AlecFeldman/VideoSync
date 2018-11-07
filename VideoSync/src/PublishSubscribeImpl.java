@@ -22,10 +22,10 @@ public class PublishSubscribeImpl implements PublishSubscribe{
 	
 	final private ArrayList<String> s_topics=new ArrayList<String>();
 
-	public PublishSubscribeImpl( int _id, String _master_peer, final MessageListener _listener) throws IOException
+	public PublishSubscribeImpl(int _id, String _master_peer, final MessageListener _listener) throws IOException
 	{
-		 peer= new PeerBuilder(Number160.createHash(_id)).ports(DEFAULT_MASTER_PORT+_id).start();
-		_dht = new PeerBuilderDHT(peer).start();	
+		 peer = new PeerBuilder(Number160.createHash(_id)).ports(DEFAULT_MASTER_PORT+_id).start();
+		_dht  = new PeerBuilderDHT(peer).start();	
 		
 		FutureBootstrap fb = peer.bootstrap().inetAddress(InetAddress.getByName(_master_peer)).ports(DEFAULT_MASTER_PORT).start();
 		fb.awaitUninterruptibly();
