@@ -52,7 +52,7 @@ public class VideoSync
 		try
 		{
 			// ID must be different for each client.
-			PublishSubscribeImpl peer = new PublishSubscribeImpl(1, ip, new MessageListenerImpl(1));
+			PublishSubscribeImpl peer = new PublishSubscribeImpl(0, ip, new MessageListenerImpl(0));
 			
 			if (option == 1)
 				peer.createTopic(topicName);
