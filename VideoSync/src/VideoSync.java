@@ -10,6 +10,7 @@ public class VideoSync
 {
 	public static void main(String[] args) throws IOException
 	{
+		System.out.println("testing");
 		int option;
 		
 		String ip = "";
