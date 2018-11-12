@@ -19,11 +19,9 @@ public class VideoSync
 {
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args) throws IOException
-	{
-		int option;
-		
+	{	
 		/*
-		 * _topic_name represents the "key" that holds a pair of PeerAddress objects. _obj can be anything,
+		 * _topic_name represents the key that holds a pair of PeerAddress objects. _obj can be anything,
 		 * but for now it is declared as a string. If listening on another address, a for loop will iterate
 		 * over each PeerAddress and send _obj to be displayed in console. This is effectively a broadcast.
 		 * A peer is first created with its address set to the address of the computer, and is then bootstrapped
@@ -44,6 +42,9 @@ public class VideoSync
 		 * address in order to invite more peers. The biggest hurdle right now is cleaning up the code below without
 		 * breaking functionality.
 		 */
+		
+		int option;
+		
 		String _topic_name = "Videos";
 		String _obj = "Hello from desktop!";
 		String _master = "10.0.0.243";
