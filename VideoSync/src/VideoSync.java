@@ -1,14 +1,13 @@
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.HashSet;
-import java.util.Scanner;
+import java.util.Random;
 
 import net.tomp2p.dht.FutureGet;
 import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.futures.FutureBootstrap;
 import net.tomp2p.futures.FutureDirect;
-import net.tomp2p.futures.FutureDiscover;
 import net.tomp2p.p2p.PeerBuilder;
 import net.tomp2p.peers.Number160;
 import net.tomp2p.peers.PeerAddress;
@@ -43,20 +42,15 @@ public class VideoSync
 		 * breaking functionality.
 		 */
 		
-		int option;
-		
 		String _topic_name = "Videos";
 		String _obj = "Hello from desktop!";
 		String _master = "10.0.0.243";
 		
-		Scanner keys = new Scanner(System.in);
+		Random rnd = new Random();
 		
 		HashSet<PeerAddress> peers_on_topic = new HashSet<>();
 		
-		System.out.print("1. Create server\n2. Join server\nEnter option: ");
-		option = keys.nextInt();
-		
-		PeerDHT peer = new PeerBuilderDHT(new PeerBuilder(Number160.createHash(0)).ports(4000).start()).start();
+		PeerDHT peer = new PeerBuilderDHT(new PeerBuilder(new Number160(rnd)).ports(4000).start()).start();
 		
 		FutureBootstrap fb = peer.peer().bootstrap().inetAddress(InetAddress.getByName(_master)).ports(4000).start();
 		fb.awaitUninterruptibly();
@@ -69,22 +63,18 @@ public class VideoSync
 		{
 			public Object reply(PeerAddress sender, Object request) throws Exception
 			{
-				System.out.println(request);
+				System.out.println("Sender: " + sender + " Request: " + request);
 				return "success";
 			}
 		});
 		
 		FutureGet futureGet;
-		
-		if (option == 1)
+		futureGet = peer.get(Number160.createHash(_topic_name)).start(); // Get PeerAddress HashSet.
+		futureGet.awaitUninterruptibly();
+		if (futureGet.isSuccess() && futureGet.isEmpty())
 		{
 			System.out.println("Creating topic...");
-			futureGet = peer.get(Number160.createHash(_topic_name)).start();
-			futureGet.awaitUninterruptibly();
-			if (futureGet.isSuccess() && futureGet.isEmpty())
-			{
-				peer.put(Number160.createHash(_topic_name)).data(new Data(new HashSet<PeerAddress>())).start().awaitUninterruptibly();
-			}
+			peer.put(Number160.createHash(_topic_name)).data(new Data(new HashSet<PeerAddress>())).start().awaitUninterruptibly();
 		}
 		
 		futureGet = peer.get(Number160.createHash(_topic_name)).start();
