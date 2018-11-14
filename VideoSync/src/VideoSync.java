@@ -1,6 +1,6 @@
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -9,7 +9,7 @@ import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.futures.BaseFutureAdapter;
 import net.tomp2p.futures.FutureBootstrap;
-import net.tomp2p.futures.FutureDiscover;
+import net.tomp2p.futures.FutureDirect;
 import net.tomp2p.p2p.Peer;
 import net.tomp2p.p2p.PeerBuilder;
 import net.tomp2p.p2p.builder.BootstrapBuilder;
@@ -20,20 +20,24 @@ import net.tomp2p.storage.Data;
 
 public class VideoSync
 {
-	public static void main(String[] args) throws IOException
+	public static void main(String[] args) throws IOException, ClassNotFoundException
 	{
 		int option;
 		int clientPort = 4000;
 		
-		String theater;
-		
 		Scanner keys = new Scanner(System.in);
 		
+		ArrayList<PeerAddress> clientAddresses = new ArrayList<>();
+		
+		Number160 theater = new Number160();
 		Number160 clientID = new Number160(new Random());
 		
 		Peer client = new PeerBuilder(clientID).ports(clientPort).start();
+		PeerDHT clientData = new PeerBuilderDHT(client).start();
+		
 		BootstrapBuilder masterBuilder = new BootstrapBuilder(client);
 		FutureBootstrap master;
+		FutureGet getData;
 		
 		System.out.print("1. Create server\n2. Join server\nEnter option: ");
 		option = keys.nextInt();
@@ -44,7 +48,7 @@ public class VideoSync
 			masterBuilder.peerAddress(client.peerAddress());
 			
 			System.out.print("Create theater: ");
-			theater = keys.nextLine();
+			theater = Number160.createHash(keys.nextLine());
 		}
 		else if (option == 2)
 		{
@@ -57,7 +61,7 @@ public class VideoSync
 			keys.nextLine();
 			
 			System.out.print("Enter theater: ");
-			theater = keys.nextLine();
+			theater = Number160.createHash(keys.nextLine());
 		}
 		
 		master = masterBuilder.start();
@@ -72,7 +76,7 @@ public class VideoSync
 					System.out.println("Successfully connected to " +
 									   master.bootstrapTo().iterator().next().inetAddress() +
 									   " on port " +
-									   master.bootstrapTo().iterator().next().tcpPort() + 
+									   master.bootstrapTo().iterator().next().tcpPort() +
 									   ".");
 				}
 				else
@@ -85,5 +89,35 @@ public class VideoSync
 				}
 			}
 		});
+		
+		client.objectDataReply(new ObjectDataReply()
+		{
+			@Override
+			public Object reply(PeerAddress sender, Object request)
+			{
+				System.out.println("Sender: " + sender + " Request: " + request);
+				return "success";
+			}
+		});
+		
+		if (option == 1)
+		{
+			getData = clientData.get(theater).start();
+			getData.awaitUninterruptibly();
+			System.out.println("Creating theater...");
+			clientData.put(theater).data(new Data(new ArrayList<PeerAddress>())).start().awaitUninterruptibly();
+		}
+		
+		getData = clientData.get(theater).start();
+		getData.awaitUninterruptibly();
+		clientAddresses = (ArrayList<PeerAddress>) getData.dataMap().values().iterator().next().object();
+		clientAddresses.add(client.peerAddress());
+		clientData.put(theater).data(new Data(clientAddresses)).start().awaitUninterruptibly();
+		
+		for (PeerAddress p : clientAddresses)
+		{
+			FutureDirect futureDirect = client.sendDirect(p).object("Hello from desktop!").start();
+			futureDirect.awaitUninterruptibly();
+		}
 	}
 }
