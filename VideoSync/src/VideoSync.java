@@ -1,21 +1,40 @@
 import java.io.IOException;
-import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Random;
 import java.util.Scanner;
+
+import net.tomp2p.dht.FutureGet;
+import net.tomp2p.dht.PeerBuilderDHT;
+import net.tomp2p.dht.PeerDHT;
+import net.tomp2p.futures.BaseFutureAdapter;
+import net.tomp2p.futures.FutureBootstrap;
+import net.tomp2p.futures.FutureDiscover;
+import net.tomp2p.p2p.Peer;
+import net.tomp2p.p2p.PeerBuilder;
+import net.tomp2p.p2p.builder.BootstrapBuilder;
+import net.tomp2p.peers.Number160;
+import net.tomp2p.peers.PeerAddress;
+import net.tomp2p.rpc.ObjectDataReply;
+import net.tomp2p.storage.Data;
 
 public class VideoSync
 {
 	public static void main(String[] args) throws IOException
 	{
 		int option;
+		int clientPort = 4000;
 		
-		String ip = "";
-		String topicName = "";
+		String theater;
 		
 		Scanner keys = new Scanner(System.in);
+		
+		Number160 clientID = new Number160(new Random());
+		
+		Peer client = new PeerBuilder(clientID).ports(clientPort).start();
+		//PeerBuilderDHT clientAddresses = new PeerBuilderDHT(client);
+		BootstrapBuilder masterBuilder = new BootstrapBuilder(client);
+		FutureBootstrap master;
 		
 		System.out.print("1. Create server\n2. Join server\nEnter option: ");
 		option = keys.nextInt();
@@ -24,107 +43,45 @@ public class VideoSync
 		
 		if (option == 1)
 		{
-			ip = getIPv4Address();
+			masterBuilder.peerAddress(client.peerAddress());
 			
-			System.out.print("Create a topic: ");
-			topicName = keys.nextLine();
+			//System.out.print("Create theater: ");
+			//theater = keys.nextLine();
 		}
 		else if (option == 2)
 		{
 			System.out.print("Enter IP address: ");
-			ip = keys.nextLine();
+			masterBuilder.inetAddress(InetAddress.getByName(keys.nextLine()));
 			
-			System.out.print("Enter a topic: ");
-			topicName = keys.nextLine();
+			System.out.print("Enter port: ");
+			masterBuilder.ports(keys.nextInt());
+			
+			//keys.nextLine();
+			
+			//System.out.print("Enter theater: ");
+			//theater = keys.nextLine();
 		}
 		
-		joinServer(option, ip, topicName, keys);
-		keys.close();
-		System.exit(0);
-	}
-	
-	public static void joinServer(int option, String ip, String topicName, Scanner keys) throws IOException
-	{
-		boolean quitServer = false;
+		master = masterBuilder.start();
 		
-		String message = "";
+		System.out.println(master.bootstrapTo().iterator().next());
 		
-		try
-		{
-			// ID must be different for each client.
-			PublishSubscribeImpl peer = new PublishSubscribeImpl(1, ip, new MessageListenerImpl(1));
-			
-			if (option == 1)
-				peer.createTopic(topicName);
-			
-			peer.subscribetoTopic(topicName);
-			
-			while (!quitServer)
-			{
-				System.out.print("> ");
-				message = keys.nextLine();
-				
-				if (message.startsWith("/"))
-				{
-					// More server commands will be added here later.
-					switch(message.substring(1))
-					{
-						case "quit":
-							quitServer = true;
-							break;
-						default:
-							System.out.println("Different commands will be printed here.");
-					}
-				}
-				else
-				{
-					peer.publishToTopic(topicName, message);
-				}
-			}
-			
-			System.out.println("Quiting server...");
-			peer.unsubscribeFromTopic(topicName);
-			peer.leaveNetwork();
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
-	}
-	
-	public static String getIPv4Address()
-	{
-		String ip = "";
-		
-		try
-		{
-			Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-			
-			while (interfaces.hasMoreElements())
-			{
-				NetworkInterface iface = interfaces.nextElement();
-				
-				if (iface.isLoopback() || !iface.isUp())
-					continue;
-				
-				Enumeration<InetAddress> addresses = iface.getInetAddresses();
-				
-				while(addresses.hasMoreElements())
-				{
-					InetAddress addr = addresses.nextElement();
-					
-					if (addr instanceof Inet6Address)
-						continue;
-					
-					ip = addr.getHostAddress();
-				}
-			}
-		}
-		catch (SocketException e)
-		{
-			throw new RuntimeException(e);
-		}
-		
-		return ip;
+		//master.addListener(new BaseFutureAdapter<FutureBootstrap>()
+		//{
+		//	@Override
+		//	public void operationComplete(FutureBootstrap master)
+		//	{
+		//		if(master.isSuccess())
+		//		{
+		//			System.out.println("Successfully connected to " + masterAddress + " on port " + masterPort + ".");
+		//			
+		//			
+		//		}
+		//		else
+		//		{
+		//			System.out.println("Failed to connect to " + masterAddress + " on port " + masterPort + ".");
+		//		}
+		//	}
+		//});
 	}
 }
