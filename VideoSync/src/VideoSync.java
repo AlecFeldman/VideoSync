@@ -32,21 +32,19 @@ public class VideoSync
 		Number160 clientID = new Number160(new Random());
 		
 		Peer client = new PeerBuilder(clientID).ports(clientPort).start();
-		//PeerBuilderDHT clientAddresses = new PeerBuilderDHT(client);
 		BootstrapBuilder masterBuilder = new BootstrapBuilder(client);
 		FutureBootstrap master;
 		
 		System.out.print("1. Create server\n2. Join server\nEnter option: ");
 		option = keys.nextInt();
-		
 		keys.nextLine();
 		
 		if (option == 1)
 		{
 			masterBuilder.peerAddress(client.peerAddress());
 			
-			//System.out.print("Create theater: ");
-			//theater = keys.nextLine();
+			System.out.print("Create theater: ");
+			theater = keys.nextLine();
 		}
 		else if (option == 2)
 		{
@@ -54,34 +52,38 @@ public class VideoSync
 			masterBuilder.inetAddress(InetAddress.getByName(keys.nextLine()));
 			
 			System.out.print("Enter port: ");
-			masterBuilder.ports(keys.nextInt());
+			masterBuilder.ports(keys.nextInt()).start();
 			
-			//keys.nextLine();
+			keys.nextLine();
 			
-			//System.out.print("Enter theater: ");
-			//theater = keys.nextLine();
+			System.out.print("Enter theater: ");
+			theater = keys.nextLine();
 		}
 		
 		master = masterBuilder.start();
 		
-		System.out.println(master.bootstrapTo().iterator().next());
-		
-		//master.addListener(new BaseFutureAdapter<FutureBootstrap>()
-		//{
-		//	@Override
-		//	public void operationComplete(FutureBootstrap master)
-		//	{
-		//		if(master.isSuccess())
-		//		{
-		//			System.out.println("Successfully connected to " + masterAddress + " on port " + masterPort + ".");
-		//			
-		//			
-		//		}
-		//		else
-		//		{
-		//			System.out.println("Failed to connect to " + masterAddress + " on port " + masterPort + ".");
-		//		}
-		//	}
-		//});
+		master.addListener(new BaseFutureAdapter<FutureBootstrap>()
+		{
+			@Override
+			public void operationComplete(FutureBootstrap master)
+			{
+				if(master.isSuccess())
+				{
+					System.out.println("Successfully connected to " +
+									   master.bootstrapTo().iterator().next().inetAddress() +
+									   " on port " +
+									   master.bootstrapTo().iterator().next().tcpPort() + 
+									   ".");
+				}
+				else
+				{
+					System.out.println("Failed to connect to " +
+							   		   master.bootstrapTo().iterator().next().inetAddress() +
+							   		   " on port " +
+							   		   master.bootstrapTo().iterator().next().tcpPort() +
+							   		   ".");
+				}
+			}
+		});
 	}
 }
