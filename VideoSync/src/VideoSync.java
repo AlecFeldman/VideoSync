@@ -6,7 +6,7 @@ import java.util.Scanner;
 
 import net.tomp2p.dht.FutureGet;
 import net.tomp2p.dht.PeerBuilderDHT;
-import net.tomp2p.dht.PeerDHT;
+import net.tomp2p.dht.DHTBuilder;
 import net.tomp2p.futures.BaseFutureAdapter;
 import net.tomp2p.futures.FutureBootstrap;
 import net.tomp2p.futures.FutureDirect;
@@ -23,101 +23,70 @@ public class VideoSync
 	public static void main(String[] args) throws IOException, ClassNotFoundException
 	{
 		int option;
-		int clientPort = 4000;
+		int clientPort = 0;
+		int masterPort = 0;
+		
+		String clientAddress = new String();
+		String masterAddress = new String();
+		String theater = new String();
 		
 		Scanner keys = new Scanner(System.in);
 		
-		ArrayList<PeerAddress> clientAddresses = new ArrayList<>();
-		
-		Number160 theater = new Number160();
 		Number160 clientID = new Number160(new Random());
+		Number160 theaterHash;
 		
 		Peer client = new PeerBuilder(clientID).ports(clientPort).start();
-		PeerDHT clientData = new PeerBuilderDHT(client).start();
 		
-		BootstrapBuilder masterBuilder = new BootstrapBuilder(client);
 		FutureBootstrap master;
-		FutureGet getData;
 		
 		System.out.print("1. Create server\n2. Join server\nEnter option: ");
 		option = keys.nextInt();
+		
 		keys.nextLine();
 		
 		if (option == 1)
-		{
-			masterBuilder.peerAddress(client.peerAddress());
-			
+		{	
 			System.out.print("Create theater: ");
-			theater = Number160.createHash(keys.nextLine());
+			theater = keys.nextLine();
+			
+			masterAddress = clientAddress;
+			masterPort = clientPort;
 		}
 		else if (option == 2)
 		{
-			System.out.print("Enter IP address: ");
-			masterBuilder.inetAddress(InetAddress.getByName(keys.nextLine()));
+			System.out.print("Enter master address: ");
+			masterAddress = keys.nextLine();
 			
-			System.out.print("Enter port: ");
-			masterBuilder.ports(keys.nextInt()).start();
+			System.out.print("Enter master port: ");
+			masterPort = keys.nextInt();
 			
 			keys.nextLine();
 			
 			System.out.print("Enter theater: ");
-			theater = Number160.createHash(keys.nextLine());
+			theater = keys.nextLine();
 		}
 		
-		master = masterBuilder.start();
+		master = client.bootstrap().inetAddress(InetAddress.getByName(masterAddress)).ports(masterPort).start();
 		
-		master.addListener(new BaseFutureAdapter<FutureBootstrap>()
-		{
-			@Override
-			public void operationComplete(FutureBootstrap master)
-			{
-				if(master.isSuccess())
-				{
-					System.out.println("Successfully connected to " +
-									   master.bootstrapTo().iterator().next().inetAddress() +
-									   " on port " +
-									   master.bootstrapTo().iterator().next().tcpPort() +
-									   ".");
-				}
-				else
-				{
-					System.out.println("Failed to connect to " +
-							   		   master.bootstrapTo().iterator().next().inetAddress() +
-							   		   " on port " +
-							   		   master.bootstrapTo().iterator().next().tcpPort() +
-							   		   ".");
-				}
-			}
-		});
 		
-		client.objectDataReply(new ObjectDataReply()
-		{
-			@Override
-			public Object reply(PeerAddress sender, Object request)
-			{
-				System.out.println("Sender: " + sender + " Request: " + request);
-				return "success";
-			}
-		});
 		
-		if (option == 1)
-		{
-			getData = clientData.get(theater).start();
-			getData.awaitUninterruptibly();
-			System.out.println("Creating theater...");
-			clientData.put(theater).data(new Data(new ArrayList<PeerAddress>())).start().awaitUninterruptibly();
-		}
+		//client.objectDataReply(new ObjectDataReply()
+		//{
+		//	@Override
+		//	public Object reply(PeerAddress sender, Object request)
+		//	{
+		//		System.out.println("Sender: " + sender + " Request: " + request);
+		//		return "success";
+		//	}
+		//});
 		
-		getData = clientData.get(theater).start();
-		getData.awaitUninterruptibly();
-		clientAddresses = (ArrayList<PeerAddress>) getData.dataMap().values().iterator().next().object();
-		clientAddresses.add(client.peerAddress());
-		clientData.put(theater).data(new Data(clientAddresses)).start().awaitUninterruptibly();
+		//clientAddresses.add(client.peerAddress());
+		//clientData.put(theaterHash).data(new Data(clientAddresses)).start().awaitUninterruptibly();
 		
-		for (PeerAddress p : clientAddresses)
-		{
-			FutureDirect futureDirect = client.sendDirect(p).object("Hello from desktop!").start();
-			futureDirect.awaitUninterruptibly();
-		}
+		//for (PeerAddress address : clientAddresses)
+		//{
+		//	FutureDirect futureDirect = client.sendDirect(address).object("Hello from desktop!").start();
+		//	futureDirect.awaitUninterruptibly();
+		//}
 	}
 }
