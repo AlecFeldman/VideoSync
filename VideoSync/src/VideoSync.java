@@ -10,7 +10,7 @@ public class VideoSync
 {
 	public static void main(String[] args) throws IOException
 	{
-		int option;
+		int option; 
 		
 		String ip = "";
 		String topicName = "";
