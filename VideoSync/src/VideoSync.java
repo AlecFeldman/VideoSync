@@ -7,43 +7,7 @@ import java.util.Enumeration;
 import java.util.Scanner;
 
 public class VideoSync
-{
-	public static void main(String[] args) throws IOException
-	{
-		System.out.println("testing");
-		int option;
-		
-		String ip = "";
-		String topicName = "";
-		
-		Scanner keys = new Scanner(System.in);
-		
-		System.out.print("1. Create server\n2. Join server\nEnter option: ");
-		option = keys.nextInt();
-		
-		keys.nextLine();
-		
-		if (option == 1)
-		{
-			ip = getIPv4Address();
-			
-			System.out.print("Create a topic: ");
-			topicName = keys.nextLine();
-		}
-		else if (option == 2)
-		{
-			System.out.print("Enter IP address: ");
-			ip = keys.nextLine();
-			
-			System.out.print("Enter a topic: ");
-			topicName = keys.nextLine();
-		}
-		
-		joinServer(option, ip, topicName, keys);
-		keys.close();
-		System.exit(0);
-	}
-	
+{	
 	public static void joinServer(int option, String ip, String topicName, Scanner keys) throws IOException
 	{
 		boolean quitServer = false;
@@ -78,9 +42,7 @@ public class VideoSync
 					}
 				}
 				else
-				{
-					peer.publishToTopic(topicName, message);
-				}
+				{peer.publishToTopic(topicName, message);}
 			}
 			
 			System.out.println("Quiting server...");
@@ -88,9 +50,7 @@ public class VideoSync
 			peer.leaveNetwork();
 		}
 		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
+		{e.printStackTrace();}
 	}
 	
 	public static String getIPv4Address()
@@ -122,10 +82,44 @@ public class VideoSync
 			}
 		}
 		catch (SocketException e)
-		{
-			throw new RuntimeException(e);
-		}
+		{throw new RuntimeException(e);}
 		
 		return ip;
+	}
+	
+	// Main Method
+	public static void main(String[] args) throws IOException
+	{
+		int option;
+		
+		String ip = "";
+		String topicName = "";
+		
+		Scanner keys = new Scanner(System.in);
+		
+		System.out.print("1. Create server\n2. Join server\nEnter option: ");
+		option = keys.nextInt();
+		
+		keys.nextLine();
+		
+		if (option == 1)
+		{
+			ip = getIPv4Address();
+			
+			System.out.print("Create a topic: ");
+			topicName = keys.nextLine();
+		}
+		else if (option == 2)
+		{
+			System.out.print("Enter IP address: ");
+			ip = keys.nextLine();
+			
+			System.out.print("Enter a topic: ");
+			topicName = keys.nextLine();
+		}
+		
+		joinServer(option, ip, topicName, keys);
+		keys.close();
+		System.exit(0);
 	}
 }
