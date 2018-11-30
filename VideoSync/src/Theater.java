@@ -94,7 +94,7 @@ public class Theater
 					audioDecoder = mediaDecoder;
 					audioStreamID = i;
 				}
-`			}
+			}
 	    }
 		
 		// Opens the decoder, with nulled key-value pair settings.
