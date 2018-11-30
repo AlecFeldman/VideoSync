@@ -59,14 +59,76 @@ public class Theater
 		videoDecoder.open(null, null);
 		audioDecoder.open(null, null);
 		
+		MediaPicture videoFrame = MediaPicture.make(
+				videoDecoder.getWidth(),
+				videoDecoder.getHeight(),
+				videoDecoder.getPixelFormat());
+		
+		MediaPictureConverter videoConverter =
+				MediaPictureConverterFactory.createConverter(
+						MediaPictureConverterFactory.HUMBLE_BGR_24,
+						videoFrame);
+		
+		ImageFrame window = ImageFrame.make();
+		BufferedImage image = null;
+		
+		MediaAudio samples = MediaAudio.make(
+				audioDecoder.getFrameSize(),
+				audioDecoder.getSampleRate(),
+				audioDecoder.getChannels(),
+				audioDecoder.getChannelLayout(),
+				audioDecoder.getSampleFormat());
+		
+		MediaAudioConverter audioConverter =
+				MediaAudioConverterFactory.createConverter(
+					MediaAudioConverterFactory.DEFAULT_JAVA_AUDIO,
+					samples);
+		
+		AudioFrame audioConnection = AudioFrame.make(audioConverter.getJavaFormat());
+		ByteBuffer rawAudio = null;
+		
+		int offset;
+		int bytesRead;
+		int packetID;
+		
 		MediaPacket packet = MediaPacket.make();
 		
-		Thread video = new Thread(new VideoThread(mediaContainer, videoDecoder, videoStreamID, packet));
-		Thread audio = new Thread(new AudioThread(mediaContainer, audioDecoder, audioStreamID, packet));
+		while (mediaContainer.read(packet) >= 0)
+		{
+			offset = 0;
+			bytesRead = 0;
+			packetID = packet.getStreamIndex();
+			
+			if (packetID == videoStreamID)
+			{	
+				do
+				{
+					bytesRead += videoDecoder.decode(videoFrame, packet, offset);
+					if (videoFrame.isComplete())
+					{
+						image = videoConverter.toImage(image, videoFrame);
+						window.setImage(image);
+					}
+					offset += bytesRead;
+				} while (offset < packet.getSize());
+			}
+			else if (packetID == audioStreamID)
+			{
+				do
+				{
+					bytesRead += audioDecoder.decode(samples, packet, offset);
+					if (samples.isComplete())
+					{
+						rawAudio = audioConverter.toJavaAudio(rawAudio, samples);
+						//audioConnection.play(rawAudio);
+					}
+					offset += bytesRead;
+				} while (offset < packet.getSize());
+			}
+		}
 		
-		video.start();
-		//audio.start();
-		
-		//mediaContainer.close();
+		mediaContainer.close();
+		audioConnection.dispose();
+		window.dispose();
 	}
 }
