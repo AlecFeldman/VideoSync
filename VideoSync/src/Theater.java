@@ -1,40 +1,33 @@
-import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import io.humble.video.Demuxer;
 import io.humble.video.DemuxerStream;
-import io.humble.video.MediaAudio;
 import io.humble.video.MediaDescriptor;
 import io.humble.video.MediaPacket;
-import io.humble.video.MediaPicture;
-import io.humble.video.awt.ImageFrame;
-import io.humble.video.awt.MediaPictureConverter;
-import io.humble.video.awt.MediaPictureConverterFactory;
-import io.humble.video.javaxsound.AudioFrame;
-import io.humble.video.javaxsound.MediaAudioConverter;
-import io.humble.video.javaxsound.MediaAudioConverterFactory;
 import io.humble.video.Decoder;
 
 public class Theater
 {
 	public static void main(String[] args) throws InterruptedException, IOException
 	{
-		String filename = "./resources/test.mp4";
+		String mediaFile = "./resources/test.mp4";
 		
 		Demuxer mediaContainer = Demuxer.make();
 		
-		mediaContainer.open(filename, null, false, true, null, null);
+		mediaContainer.open(mediaFile, null, false, true, null, null);
 		
-		int totalStreams = mediaContainer.getNumStreams();
+		int packetID;
 		int videoStreamID = -1;
 		int audioStreamID = -1;
+		int totalStreams = mediaContainer.getNumStreams();
 		
 		DemuxerStream stream = null;
 		
 		Decoder mediaDecoder = null;
 		Decoder videoDecoder = null;
 		Decoder audioDecoder = null;
+		
+		MediaPacket packet = MediaPacket.make();
 		
 		for (int i = 0; i < totalStreams; i++)
 		{
@@ -56,79 +49,30 @@ public class Theater
 			}
 	    }
 		
-		videoDecoder.open(null, null);
-		audioDecoder.open(null, null);
+		VideoRunnable video = new VideoRunnable(videoDecoder);
+		Thread videoThread = new Thread(video);
+		videoThread.start();
 		
-		MediaPicture videoFrame = MediaPicture.make(
-				videoDecoder.getWidth(),
-				videoDecoder.getHeight(),
-				videoDecoder.getPixelFormat());
-		
-		MediaPictureConverter videoConverter =
-				MediaPictureConverterFactory.createConverter(
-						MediaPictureConverterFactory.HUMBLE_BGR_24,
-						videoFrame);
-		
-		ImageFrame window = ImageFrame.make();
-		BufferedImage image = null;
-		
-		MediaAudio samples = MediaAudio.make(
-				audioDecoder.getFrameSize(),
-				audioDecoder.getSampleRate(),
-				audioDecoder.getChannels(),
-				audioDecoder.getChannelLayout(),
-				audioDecoder.getSampleFormat());
-		
-		MediaAudioConverter audioConverter =
-				MediaAudioConverterFactory.createConverter(
-					MediaAudioConverterFactory.DEFAULT_JAVA_AUDIO,
-					samples);
-		
-		AudioFrame audioConnection = AudioFrame.make(audioConverter.getJavaFormat());
-		ByteBuffer rawAudio = null;
-		
-		int offset;
-		int bytesRead;
-		int packetID;
-		
-		MediaPacket packet = MediaPacket.make();
+		AudioRunnable audio = new AudioRunnable(audioDecoder);
+		Thread audioThread = new Thread(audio);
+		audioThread.start();
 		
 		while (mediaContainer.read(packet) >= 0)
 		{
-			offset = 0;
-			bytesRead = 0;
 			packetID = packet.getStreamIndex();
 			
 			if (packetID == videoStreamID)
-			{	
-				do
-				{
-					bytesRead += videoDecoder.decode(videoFrame, packet, offset);
-					if (videoFrame.isComplete())
-					{
-						image = videoConverter.toImage(image, videoFrame);
-						window.setImage(image);
-					}
-					offset += bytesRead;
-				} while (offset < packet.getSize());
+			{
+				video.addVideoPacket(packet);
 			}
 			else if (packetID == audioStreamID)
 			{
-				do
-				{
-					bytesRead += audioDecoder.decode(samples, packet, offset);
-					if (samples.isComplete())
-					{
-						rawAudio = audioConverter.toJavaAudio(rawAudio, samples);
-						//audioConnection.play(rawAudio);
-					}
-					offset += bytesRead;
-				} while (offset < packet.getSize());
+				audio.addAudioPacket(packet);
 			}
 		}
 		
 		mediaContainer.close();
-		audioConnection.dispose();
-		window.dispose();
+		audio.stopAudio();
+		video.stopVideo();
 	}
 }
