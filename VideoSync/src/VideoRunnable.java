@@ -12,71 +12,77 @@ import io.humble.video.awt.MediaPictureConverterFactory;
 
 public class VideoRunnable implements Runnable
 {
-	private int offset;
-	private int bytesRead;
+	private AtomicBoolean isMainFinished;
 	
 	private Object videoPacketLock = new Object();
 	
-	private AtomicBoolean runVideo = new AtomicBoolean(true);
-	
 	private Decoder videoDecoder;
-	
-	private MediaPicture videoFrame;
-	
-	private MediaPictureConverter videoConverter;
-	
-	private ImageFrame window = ImageFrame.make();
-	
-	private BufferedImage image = null;
 	
 	private Queue<MediaPacket> videoPackets = new ArrayDeque<>();
 	
-	public VideoRunnable(Decoder videoDecoder)
+	public VideoRunnable(Decoder videoDecoder, AtomicBoolean isMainFinished)
 	{
+		this.isMainFinished = isMainFinished;
 		this.videoDecoder = videoDecoder;
-		this.videoDecoder.open(null, null);
-		
-		videoFrame = MediaPicture.make(
-			this.videoDecoder.getWidth(),
-			this.videoDecoder.getHeight(),
-			this.videoDecoder.getPixelFormat());
-		
-		videoConverter =
-			MediaPictureConverterFactory.createConverter(
-				MediaPictureConverterFactory.HUMBLE_BGR_24,
-				videoFrame);
 	}
 	
 	public void run()
 	{
-		while (runVideo.get())
+		int offset;
+		int bytesRead;
+		
+		ImageFrame window = ImageFrame.make();
+		
+		BufferedImage image = null;
+		
+		Queue<MediaPacket> secondPackets = new ArrayDeque<>();
+		
+		videoDecoder.open(null, null);
+		
+		MediaPicture videoFrame = MediaPicture.make(
+			videoDecoder.getWidth(),
+			videoDecoder.getHeight(),
+			videoDecoder.getPixelFormat());
+		
+		MediaPictureConverter videoConverter =
+			MediaPictureConverterFactory.createConverter(
+				MediaPictureConverterFactory.HUMBLE_BGR_24,
+				videoFrame);
+		
+		while (!(isMainFinished.get() && isQueueEmpty() && secondPackets.isEmpty()))
 		{
 			synchronized(videoPacketLock)
 			{
 				for(MediaPacket vp = videoPackets.poll(); vp != null; vp = videoPackets.poll())
 				{
-					try
-					{
-						Thread.sleep(1000 / 30);
-					} catch (InterruptedException e)
-					{
-						e.printStackTrace();
-					}
-					
-					offset = 0;
-					bytesRead = 0;
-					
-					do
-					{
-						bytesRead += videoDecoder.decode(videoFrame, vp, offset);
-						if (videoFrame.isComplete())
-						{
-							image = videoConverter.toImage(image, videoFrame);
-							window.setImage(image);
-						}
-						offset += bytesRead;
-					} while (offset < vp.getSize());
+					secondPackets.add(vp);
 				}
+			}
+			
+			for(MediaPacket sp = secondPackets.poll(); sp != null; sp = secondPackets.poll())
+			{
+				offset = 0;
+				bytesRead = 0;
+				
+				try
+				{
+					Thread.sleep(1000 / 40);
+				}
+				catch (InterruptedException e)
+				{
+					e.printStackTrace();
+				}
+				
+				do
+				{
+					bytesRead += videoDecoder.decode(videoFrame, sp, offset);
+					if (videoFrame.isComplete())
+					{
+						image = videoConverter.toImage(image, videoFrame);
+						window.setImage(image);
+					}
+					offset += bytesRead;
+				} while (offset < sp.getSize());
 			}
 		}
 		
@@ -91,8 +97,11 @@ public class VideoRunnable implements Runnable
 		}
 	}
 	
-	public void stopVideo()
+	public boolean isQueueEmpty()
 	{
-		runVideo.set(false);
+		synchronized(videoPacketLock)
+		{
+			return videoPackets.isEmpty();
+		}
 	}
 }

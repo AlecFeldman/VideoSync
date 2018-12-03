@@ -12,67 +12,70 @@ import io.humble.video.javaxsound.MediaAudioConverterFactory;
 
 public class AudioRunnable implements Runnable
 {
-	private int offset;
-	private int bytesRead;
+	private AtomicBoolean isMainFinished;
 	
 	private Object audioPacketLock = new Object();
 	
-	private AtomicBoolean runAudio = new AtomicBoolean(true);
-	
 	private Decoder audioDecoder;
-	
-	private MediaAudio samples;
-	
-	private MediaAudioConverter audioConverter;
-	
-	private AudioFrame audioConnection;
-	
-	private ByteBuffer rawAudio = null;
 	
 	private Queue<MediaPacket> audioPackets = new ArrayDeque<>();
 	
-	public AudioRunnable(Decoder audioDecoder)
+	public AudioRunnable(Decoder audioDecoder, AtomicBoolean isMainFinished)
 	{
+		this.isMainFinished = isMainFinished;
 		this.audioDecoder = audioDecoder;
-		this.audioDecoder.open(null, null);
-		
-		samples = MediaAudio.make(
-			this.audioDecoder.getFrameSize(),
-			this.audioDecoder.getSampleRate(),
-			this.audioDecoder.getChannels(),
-			this.audioDecoder.getChannelLayout(),
-			this.audioDecoder.getSampleFormat());
-		
-		audioConverter =
-			MediaAudioConverterFactory.createConverter(
-				MediaAudioConverterFactory.DEFAULT_JAVA_AUDIO,
-				samples);
-		
-		audioConnection = AudioFrame.make(audioConverter.getJavaFormat());
 	}
 	
 	public void run()
 	{
-		while (runAudio.get())
-		{
+		int offset;
+		int bytesRead;
+		
+		ByteBuffer rawAudio = null;
+		
+		Queue<MediaPacket> secondPackets = new ArrayDeque<>();
+		
+		audioDecoder.open(null, null);
+		
+		MediaAudio samples = MediaAudio.make(
+			audioDecoder.getFrameSize(),
+			audioDecoder.getSampleRate(),
+			audioDecoder.getChannels(),
+			audioDecoder.getChannelLayout(),
+			audioDecoder.getSampleFormat());
+			
+		MediaAudioConverter audioConverter =
+			MediaAudioConverterFactory.createConverter(
+				MediaAudioConverterFactory.DEFAULT_JAVA_AUDIO,
+				samples);
+			
+		AudioFrame audioConnection = AudioFrame.make(audioConverter.getJavaFormat());
+		
+		while (!(isMainFinished.get() && isQueueEmpty() && secondPackets.isEmpty()))
+		{	
 			synchronized(audioPacketLock)
 			{
 				for(MediaPacket ap = audioPackets.poll(); ap != null; ap = audioPackets.poll())
 				{
-					offset = 0;
-					bytesRead = 0;
-					
-					do
-					{
-						bytesRead += audioDecoder.decode(samples, ap, offset);
-						if (samples.isComplete())
-						{
-							rawAudio = audioConverter.toJavaAudio(rawAudio, samples);
-							audioConnection.play(rawAudio);
-						}
-						offset += bytesRead;
-					} while (offset < ap.getSize());
+					secondPackets.add(ap);
 				}
+			}
+			
+			for (MediaPacket sp = secondPackets.poll(); sp != null; sp = secondPackets.poll())
+			{
+				offset = 0;
+				bytesRead = 0;
+				
+				do
+				{
+					bytesRead += audioDecoder.decode(samples, sp, offset);
+					if (samples.isComplete())
+					{
+						rawAudio = audioConverter.toJavaAudio(rawAudio, samples);
+						audioConnection.play(rawAudio);
+					}
+					offset += bytesRead;
+				} while (offset < sp.getSize());
 			}
 		}
 		
@@ -87,8 +90,11 @@ public class AudioRunnable implements Runnable
 		}
 	}
 	
-	public void stopAudio()
+	public boolean isQueueEmpty()
 	{
-		runAudio.set(false);
+		synchronized(audioPacketLock)
+		{
+			return audioPackets.isEmpty();
+		}
 	}
 }

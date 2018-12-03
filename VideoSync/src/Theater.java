@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.humble.video.Demuxer;
 import io.humble.video.DemuxerStream;
@@ -10,16 +11,16 @@ public class Theater
 {
 	public static void main(String[] args) throws InterruptedException, IOException
 	{
-		String mediaFile = "./resources/test.mp4";
-		
-		Demuxer mediaContainer = Demuxer.make();
-		
-		mediaContainer.open(mediaFile, null, false, true, null, null);
-		
+		int totalStreams;
 		int packetID;
 		int videoStreamID = -1;
 		int audioStreamID = -1;
-		int totalStreams = mediaContainer.getNumStreams();
+		
+		String mediaFile = "./resources/test.mp4";
+		
+		AtomicBoolean isMainFinished = new AtomicBoolean(false);
+		
+		Demuxer mediaContainer = Demuxer.make();
 		
 		DemuxerStream stream = null;
 		
@@ -28,6 +29,15 @@ public class Theater
 		Decoder audioDecoder = null;
 		
 		MediaPacket packet = MediaPacket.make();
+		
+		VideoRunnable video;
+		AudioRunnable audio;
+		
+		Thread videoThread;
+		Thread audioThread;
+		
+		mediaContainer.open(mediaFile, null, false, true, null, null);
+		totalStreams = mediaContainer.getNumStreams();
 		
 		for (int i = 0; i < totalStreams; i++)
 		{
@@ -49,12 +59,13 @@ public class Theater
 			}
 	    }
 		
-		VideoRunnable video = new VideoRunnable(videoDecoder);
-		Thread videoThread = new Thread(video);
-		videoThread.start();
+		video = new VideoRunnable(videoDecoder, isMainFinished);
+		audio = new AudioRunnable(audioDecoder, isMainFinished);
 		
-		AudioRunnable audio = new AudioRunnable(audioDecoder);
-		Thread audioThread = new Thread(audio);
+		videoThread = new Thread(video);
+		audioThread = new Thread(audio);
+		
+		videoThread.start();
 		audioThread.start();
 		
 		while (mediaContainer.read(packet) >= 0)
@@ -71,8 +82,11 @@ public class Theater
 			}
 		}
 		
+		isMainFinished.set(true);
+		
+		videoThread.join();
+		audioThread.join();
+		
 		mediaContainer.close();
-		audio.stopAudio();
-		video.stopVideo();
 	}
 }
