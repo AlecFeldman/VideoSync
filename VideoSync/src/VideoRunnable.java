@@ -12,7 +12,7 @@ import io.humble.video.awt.MediaPictureConverterFactory;
 
 public class VideoRunnable implements Runnable
 {
-	private AtomicBoolean isMainFinished;
+	private AtomicBoolean isMasterFinished;
 	
 	private Object videoPacketLock = new Object();
 	
@@ -20,9 +20,9 @@ public class VideoRunnable implements Runnable
 	
 	private Queue<MediaPacket> videoPackets = new ArrayDeque<>();
 	
-	public VideoRunnable(Decoder videoDecoder, AtomicBoolean isMainFinished)
+	public VideoRunnable(Decoder videoDecoder, AtomicBoolean isMasterFinished)
 	{
-		this.isMainFinished = isMainFinished;
+		this.isMasterFinished = isMasterFinished;
 		this.videoDecoder = videoDecoder;
 	}
 	
@@ -49,7 +49,7 @@ public class VideoRunnable implements Runnable
 				MediaPictureConverterFactory.HUMBLE_BGR_24,
 				videoFrame);
 		
-		while (!(isMainFinished.get() && isQueueEmpty() && secondPackets.isEmpty()))
+		while (!(isMasterFinished.get() && isQueueEmpty() && secondPackets.isEmpty()))
 		{
 			synchronized(videoPacketLock)
 			{

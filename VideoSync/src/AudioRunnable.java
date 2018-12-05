@@ -12,7 +12,7 @@ import io.humble.video.javaxsound.MediaAudioConverterFactory;
 
 public class AudioRunnable implements Runnable
 {
-	private AtomicBoolean isMainFinished;
+	private AtomicBoolean isMasterFinished;
 	
 	private Object audioPacketLock = new Object();
 	
@@ -20,9 +20,9 @@ public class AudioRunnable implements Runnable
 	
 	private Queue<MediaPacket> audioPackets = new ArrayDeque<>();
 	
-	public AudioRunnable(Decoder audioDecoder, AtomicBoolean isMainFinished)
+	public AudioRunnable(Decoder audioDecoder, AtomicBoolean isMasterFinished)
 	{
-		this.isMainFinished = isMainFinished;
+		this.isMasterFinished = isMasterFinished;
 		this.audioDecoder = audioDecoder;
 	}
 	
@@ -51,7 +51,7 @@ public class AudioRunnable implements Runnable
 			
 		AudioFrame audioConnection = AudioFrame.make(audioConverter.getJavaFormat());
 		
-		while (!(isMainFinished.get() && isQueueEmpty() && secondPackets.isEmpty()))
+		while (!(isMasterFinished.get() && isQueueEmpty() && secondPackets.isEmpty()))
 		{	
 			synchronized(audioPacketLock)
 			{
