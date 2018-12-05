@@ -8,7 +8,6 @@ import java.util.Scanner;
 import net.tomp2p.dht.FutureGet;
 import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.dht.PeerDHT;
-import net.tomp2p.futures.BaseFutureAdapter;
 import net.tomp2p.futures.FutureBootstrap;
 import net.tomp2p.futures.FutureDirect;
 import net.tomp2p.p2p.Peer;
