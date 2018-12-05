@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Scanner;
@@ -26,27 +27,33 @@ public class Theater
 		
 		String message = "Hello there!";
 		
+		Scanner keyboard = new Scanner(System.in);
+		
+		ServerSocket randomSocket = new ServerSocket(0);
+		
+		randomSocket.close();
+		
 		ArrayList<PeerAddress> connectedClients = new ArrayList<>();
 		
 		Number160 theaterKey = new Number160();
 		Number160 clientID = new Number160(new Random());
 		
-		Peer client = new PeerBuilder(clientID).ports(4000).start();
+		Peer client = new PeerBuilder(clientID).ports(randomSocket.getLocalPort()).start();
 		PeerDHT clientData = new PeerBuilderDHT(client).start();
 		
 		BootstrapBuilder masterBuilder = new BootstrapBuilder(client);
 		FutureBootstrap master;
-		
-		Scanner keys = new Scanner(System.in);
+		FutureGet getData;
+		FutureDirect sendData;
 		
 		System.out.print("1. Create theater\n2. Join theater\nEnter option: ");
-		option = keys.nextInt();
-		keys.nextLine();
+		option = keyboard.nextInt();
+		keyboard.nextLine();
 		
 		if (option == 1)
 		{
 			System.out.print("Create theater: ");
-			theaterKey = Number160.createHash(keys.nextLine());
+			theaterKey = Number160.createHash(keyboard.nextLine());
 			
 			master = client.bootstrap().peerAddress(client.peerAddress()).start();
 			master.awaitUninterruptibly();
@@ -58,20 +65,20 @@ public class Theater
 		else if (option == 2)
 		{
 			System.out.print("Enter master address: ");
-			masterBuilder.inetAddress(InetAddress.getByName(keys.nextLine()));
+			masterBuilder.inetAddress(InetAddress.getByName(keyboard.nextLine()));
 			
 			System.out.print("Enter master port: ");
-			masterBuilder.ports(keys.nextInt());
-			keys.nextLine();
+			masterBuilder.ports(keyboard.nextInt());
+			keyboard.nextLine();
 			
 			System.out.print("Enter theater: ");
-			theaterKey = Number160.createHash(keys.nextLine());
+			theaterKey = Number160.createHash(keyboard.nextLine());
 			
 			master = masterBuilder.start();
 			master.awaitUninterruptibly();
 			
 			createDataListener(client);
-			FutureGet getData = clientData.get(theaterKey).start();
+			getData = clientData.get(theaterKey).start();
 			getData.awaitUninterruptibly();
 			
 			connectedClients = (ArrayList<PeerAddress>) getData.dataMap().values().iterator().next().object();
@@ -81,8 +88,8 @@ public class Theater
 		
 		for(PeerAddress c : connectedClients)
 		{
-			FutureDirect futureDirect = client.sendDirect(c).object(message).start();
-			futureDirect.awaitUninterruptibly();
+			sendData = client.sendDirect(c).object(message).start();
+			sendData.awaitUninterruptibly();
 		}
 	}
 	
@@ -90,6 +97,7 @@ public class Theater
 	{
 		client.objectDataReply(new ObjectDataReply()
 		{
+			@Override
 			public Object reply(PeerAddress sender, Object request) throws Exception
 			{
 				System.out.println("Sender: " + sender + " Request: " + request);
