@@ -19,7 +19,7 @@ import net.tomp2p.storage.Data;
 public class Theater
 {
 	@SuppressWarnings("unchecked")
-	public static void main(String[] args) throws InterruptedException, IOException, ClassNotFoundException
+	public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException
 	{
 		int option;
 		
@@ -53,7 +53,14 @@ public class Theater
 			master = client.bootstrap().peerAddress(client.peerAddress()).start();
 			master.awaitUninterruptibly();
 			
-			MasterMedia.play("./resources/test.mp4", client, connectedClients);
+			clientData.put(theaterKey).data(new Data(new ArrayList<PeerAddress>())).start().awaitUninterruptibly();
+			
+			// Temporary
+			connectedClients.add(client.peerAddress());
+			MediaNetwork.createPacketListener(client);
+			// Temporary
+			
+			MediaMaster.play("./resources/test.mp4", client, connectedClients);
 		}
 		else if (option == 2)
 		{
@@ -70,7 +77,7 @@ public class Theater
 			master = masterBuilder.start();
 			master.awaitUninterruptibly();
 			
-			NetworkMedia.createPacketListener(client);
+			MediaNetwork.createPacketListener(client);
 			getData = clientData.get(theaterKey).start();
 			getData.awaitUninterruptibly();
 			

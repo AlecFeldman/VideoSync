@@ -10,7 +10,7 @@ import io.humble.video.awt.ImageFrame;
 import io.humble.video.awt.MediaPictureConverter;
 import io.humble.video.awt.MediaPictureConverterFactory;
 
-public class VideoRunnable implements Runnable
+public class RunnableVideo implements Runnable
 {
 	private AtomicBoolean isMasterFinished;
 	
@@ -20,7 +20,7 @@ public class VideoRunnable implements Runnable
 	
 	private Queue<MediaPacket> videoPackets = new ArrayDeque<>();
 	
-	public VideoRunnable(Decoder videoDecoder, AtomicBoolean isMasterFinished)
+	public RunnableVideo(Decoder videoDecoder, AtomicBoolean isMasterFinished)
 	{
 		this.isMasterFinished = isMasterFinished;
 		this.videoDecoder = videoDecoder;
@@ -66,7 +66,7 @@ public class VideoRunnable implements Runnable
 				
 				try
 				{
-					Thread.sleep(1000 / 40);
+					Thread.sleep(1000 / 30);
 				}
 				catch (InterruptedException e)
 				{

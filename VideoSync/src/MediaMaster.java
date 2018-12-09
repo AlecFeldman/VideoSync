@@ -11,14 +11,14 @@ import io.humble.video.MediaPacket;
 import net.tomp2p.p2p.Peer;
 import net.tomp2p.peers.PeerAddress;
 
-public class MasterMedia
+public class MediaMaster
 {
 	public static void play(String mediaFile, Peer client, ArrayList<PeerAddress> connectedClients) throws InterruptedException, IOException
 	{
 		int totalStreams;
-		int packetID;
-		int videoStreamID = -1;
-		int audioStreamID = -1;
+		int packetIndex;
+		int videoStreamIndex = -1;
+		int audioStreamIndex = -1;
 		
 		AtomicBoolean isMasterFinished = new AtomicBoolean(false);
 		
@@ -30,9 +30,10 @@ public class MasterMedia
 		Decoder audioDecoder = null;
 		
 		MediaPacket packet = MediaPacket.make();
+		MediaPacketSerialized serializedPacket;
 		
-		VideoRunnable video;
-		AudioRunnable audio;
+		RunnableVideo video;
+		RunnableAudio audio;
 		
 		Thread videoThread;
 		Thread audioThread;
@@ -50,18 +51,18 @@ public class MasterMedia
 				if (mediaDecoder.getCodecType() == MediaDescriptor.Type.MEDIA_VIDEO)
 				{
 					videoDecoder = mediaDecoder;
-					videoStreamID = i;
+					videoStreamIndex = i;
 				}
 				else if (mediaDecoder.getCodecType() == MediaDescriptor.Type.MEDIA_AUDIO)
 				{
 					audioDecoder = mediaDecoder;
-					audioStreamID = i;
+					audioStreamIndex = i;
 				}
 			}
 	    }
 		
-		video = new VideoRunnable(videoDecoder, isMasterFinished);
-		audio = new AudioRunnable(audioDecoder, isMasterFinished);
+		video = new RunnableVideo(videoDecoder, isMasterFinished);
+		audio = new RunnableAudio(audioDecoder, isMasterFinished);
 		
 		videoThread = new Thread(video);
 		audioThread = new Thread(audio);
@@ -71,20 +72,22 @@ public class MasterMedia
 		
 		while (mediaContainer.read(packet) >= 0)
 		{
-			packetID = packet.getStreamIndex();
+			packetIndex = packet.getStreamIndex();
 			
-			if (packetID == videoStreamID)
+			if (packetIndex == videoStreamIndex)
 			{
 				video.addVideoPacket(packet);
 			}
-			else if (packetID == audioStreamID)
+			else if (packetIndex == audioStreamIndex)
 			{
 				audio.addAudioPacket(packet);
 			}
 			
+			serializedPacket = new MediaPacketSerialized(packet);
+			
 			for(PeerAddress c : connectedClients)
 			{
-				client.sendDirect(c).object(packet).start();
+				client.sendDirect(c).object(serializedPacket).start();
 			}
 		}
 		

@@ -10,7 +10,7 @@ import io.humble.video.javaxsound.AudioFrame;
 import io.humble.video.javaxsound.MediaAudioConverter;
 import io.humble.video.javaxsound.MediaAudioConverterFactory;
 
-public class AudioRunnable implements Runnable
+public class RunnableAudio implements Runnable
 {
 	private AtomicBoolean isMasterFinished;
 	
@@ -20,7 +20,7 @@ public class AudioRunnable implements Runnable
 	
 	private Queue<MediaPacket> audioPackets = new ArrayDeque<>();
 	
-	public AudioRunnable(Decoder audioDecoder, AtomicBoolean isMasterFinished)
+	public RunnableAudio(Decoder audioDecoder, AtomicBoolean isMasterFinished)
 	{
 		this.isMasterFinished = isMasterFinished;
 		this.audioDecoder = audioDecoder;
