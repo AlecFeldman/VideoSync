@@ -18,7 +18,8 @@ public class MediaNetwork
 	
 	private PeerDHT mediaData;
 	
-	public MediaNetwork(Peer client, Number160 videoKey, Number160 audioKey, Number160 indexKey, Number160 codecKey) throws ClassNotFoundException, IOException
+	public MediaNetwork(Peer client, Number160 videoKey, Number160 audioKey,
+						Number160 indexKey, Number160 codecKey) throws ClassNotFoundException, IOException
 	{
 		mediaData = new PeerBuilderDHT(client).start();
 		

@@ -59,14 +59,14 @@ public class MediaMaster
 			}
 	    }
 		
-		video = new RunnableVideo(videoDecoder, videoIndex, videoKey, indexKey, codecKey, client, isMasterFinished);
-		//audio = new RunnableAudio(audioDecoder, audioIndex, client, isMasterFinished);
+		video = new RunnableVideo(client, videoDecoder, videoIndex, videoKey, indexKey, codecKey, isMasterFinished);
+		audio = new RunnableAudio(client, audioDecoder, audioIndex, audioKey, indexKey, codecKey, isMasterFinished);
 		
 		videoThread = new Thread(video);
-		//audioThread = new Thread(audio);
+		audioThread = new Thread(audio);
 		
 		videoThread.start();
-		//audioThread.start();
+		audioThread.start();
 		
 		while (mediaContainer.read(packet) >= 0)
 		{
@@ -78,14 +78,14 @@ public class MediaMaster
 			}
 			else if (packetIndex == audioIndex)
 			{
-				//audio.addAudioPacket(packet);
+				audio.addPacket(packet);
 			}
 		}
 		
 		isMasterFinished.set(true);
 		
 		videoThread.join();
-		//audioThread.join();
+		audioThread.join();
 		
 		mediaContainer.close();
 	}

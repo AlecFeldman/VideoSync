@@ -34,15 +34,15 @@ public class RunnableVideo implements Runnable
 	
 	private Queue<MediaPacket> videoPackets = new ArrayDeque<>();
 	
-	public RunnableVideo(Decoder videoDecoder, int videoIndex, Number160 videoKey, Number160 indexKey,
-						 Number160 codecKey, Peer client, AtomicBoolean isMasterFinished)
+	public RunnableVideo(Peer client, Decoder videoDecoder, int videoIndex, Number160 videoKey,
+						 Number160 indexKey, Number160 codecKey, AtomicBoolean isMasterFinished)
 	{
+		this.videoData = new PeerBuilderDHT(client).start();
 		this.videoDecoder = videoDecoder;
 		this.videoIndex = videoIndex;
 		this.videoKey = videoKey;
 		this.indexKey = indexKey;
 		this.codecKey = codecKey;
-		this.videoData = new PeerBuilderDHT(client).start();
 		this.isMasterFinished = isMasterFinished;
 	}
 	

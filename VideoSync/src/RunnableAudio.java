@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -13,23 +14,35 @@ import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.p2p.Peer;
 import net.tomp2p.peers.Number160;
+import net.tomp2p.storage.Data;
 
 public class RunnableAudio implements Runnable
 {
+	int audioIndex;
+	
 	private AtomicBoolean isMasterFinished;
 	
 	private Object audioPacketLock = new Object();
 	
 	private Decoder audioDecoder;
 	
-	private Queue<MediaPacket> audioPackets = new ArrayDeque<>();
-	
 	private PeerDHT audioData;
 	
-	public RunnableAudio(Decoder audioDecoder, Peer client, AtomicBoolean isMasterFinished)
+	private Number160 audioKey;
+	private Number160 indexKey;
+	private Number160 codecKey;
+	
+	private Queue<MediaPacket> audioPackets = new ArrayDeque<>();
+	
+	public RunnableAudio(Peer client, Decoder audioDecoder, int audioIndex, Number160 audioKey,
+						 Number160 indexKey, Number160 codecKey, AtomicBoolean isMasterFinished)
 	{
-		this.audioDecoder = audioDecoder;
 		this.audioData = new PeerBuilderDHT(client).start();
+		this.audioDecoder = audioDecoder;
+		this.audioIndex = audioIndex;
+		this.audioKey = audioKey;
+		this.indexKey = indexKey;
+		this.codecKey = codecKey;
 		this.isMasterFinished = isMasterFinished;
 	}
 	
@@ -38,11 +51,12 @@ public class RunnableAudio implements Runnable
 		int offset;
 		int bytesRead;
 		
-		Number160 audioKey = Number160.createHash("audio");
-		
 		ByteBuffer rawAudio = null;
 		
 		Queue<MediaPacket> secondPackets = new ArrayDeque<>();
+		
+		// Don't need this on client end.
+		setRouteData();
 		
 		audioDecoder.open(null, null);
 		
@@ -86,6 +100,7 @@ public class RunnableAudio implements Runnable
 					offset += bytesRead;
 				} while (offset < sp.getSize());
 				
+				// Don't need this on client end.
 				audioData.send(audioKey).object(new MediaPacketSerialized(sp)).start();
 			}
 		}
@@ -93,7 +108,7 @@ public class RunnableAudio implements Runnable
 		audioConnection.dispose();
 	}
 	
-	public void addAudioPacket(MediaPacket packet)
+	public void addPacket(MediaPacket packet)
 	{
 		synchronized(audioPacketLock)
 		{
@@ -101,7 +116,20 @@ public class RunnableAudio implements Runnable
 		}
 	}
 	
-	public boolean isQueueEmpty()
+	private void setRouteData()
+	{
+		try
+		{
+			audioData.put(audioKey).data(new Data(audioIndex)).domainKey(indexKey).start();
+			audioData.put(audioKey).data(new Data(audioDecoder.getCodecID())).domainKey(codecKey).start();
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+	}
+	
+	private boolean isQueueEmpty()
 	{
 		synchronized(audioPacketLock)
 		{
