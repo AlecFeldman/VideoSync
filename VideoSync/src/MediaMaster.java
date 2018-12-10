@@ -1,18 +1,20 @@
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.humble.video.Codec;
 import io.humble.video.Decoder;
 import io.humble.video.Demuxer;
 import io.humble.video.DemuxerStream;
 import io.humble.video.MediaDescriptor;
 import io.humble.video.MediaPacket;
-import net.tomp2p.dht.FutureSend;
 import net.tomp2p.dht.PeerDHT;
+import net.tomp2p.p2p.Peer;
 import net.tomp2p.peers.Number160;
+import net.tomp2p.storage.Data;
 
 public class MediaMaster
 {
-	public static void play(String mediaFile, PeerDHT clientData, Number160 theaterKey) throws InterruptedException, IOException
+	public static void play(String mediaFile, Peer client) throws InterruptedException, IOException
 	{
 		int totalStreams;
 		int packetIndex;
@@ -59,8 +61,8 @@ public class MediaMaster
 			}
 	    }
 		
-		video = new RunnableVideo(videoDecoder, isMasterFinished);
-		audio = new RunnableAudio(audioDecoder, isMasterFinished);
+		video = new RunnableVideo(videoDecoder, client, isMasterFinished);
+		audio = new RunnableAudio(audioDecoder, client, isMasterFinished);
 		
 		videoThread = new Thread(video);
 		audioThread = new Thread(audio);
@@ -80,12 +82,6 @@ public class MediaMaster
 			{
 				audio.addAudioPacket(packet);
 			}
-			
-			clientData.send(theaterKey).object(new MediaPacketSerialized(packet)).start();
-			//futureSend.awaitUninterruptibly();
-			//for (Object object : futureSend.rawDirectData2().values()) {
-			//	System.err.println("got:" + object);
-			//}
 		}
 		
 		isMasterFinished.set(true);

@@ -9,6 +9,10 @@ import io.humble.video.MediaPicture;
 import io.humble.video.awt.ImageFrame;
 import io.humble.video.awt.MediaPictureConverter;
 import io.humble.video.awt.MediaPictureConverterFactory;
+import net.tomp2p.dht.PeerBuilderDHT;
+import net.tomp2p.dht.PeerDHT;
+import net.tomp2p.p2p.Peer;
+import net.tomp2p.peers.Number160;
 
 public class RunnableVideo implements Runnable
 {
@@ -20,16 +24,21 @@ public class RunnableVideo implements Runnable
 	
 	private Queue<MediaPacket> videoPackets = new ArrayDeque<>();
 	
-	public RunnableVideo(Decoder videoDecoder, AtomicBoolean isMasterFinished)
+	private PeerDHT videoData;
+	
+	public RunnableVideo(Decoder videoDecoder, Peer client, AtomicBoolean isMasterFinished)
 	{
-		this.isMasterFinished = isMasterFinished;
 		this.videoDecoder = videoDecoder;
+		this.videoData = new PeerBuilderDHT(client).start();
+		this.isMasterFinished = isMasterFinished;
 	}
 	
 	public void run()
 	{
 		int offset;
 		int bytesRead;
+		
+		Number160 videoKey = Number160.createHash("video");
 		
 		ImageFrame window = ImageFrame.make();
 		
@@ -74,6 +83,8 @@ public class RunnableVideo implements Runnable
 					}
 					offset += bytesRead;
 				} while (offset < sp.getSize());
+				
+				videoData.send(videoKey).object(new MediaPacketSerialized(sp)).start();
 				
 				try
 				{
