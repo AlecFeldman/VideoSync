@@ -31,6 +31,10 @@ public class RunnableVideo implements Runnable
 	
 	private Queue<MediaPacket> videoPackets = new ArrayDeque<>();
 	
+	private int videoIndex;
+	private Number160 indexKey;
+	private Number160 codecKey;
+	
 	public RunnableVideo(Peer client, Decoder videoDecoder, int videoIndex, Number160 videoKey,
 						 Number160 indexKey, Number160 codecKey, AtomicBoolean isMasterFinished) throws IOException
 	{
@@ -38,9 +42,13 @@ public class RunnableVideo implements Runnable
 		this.videoDecoder = videoDecoder;
 		this.videoKey = videoKey;
 		this.isMasterFinished = isMasterFinished;
-
-		setData(indexKey, new Data(videoIndex));
-		setData(codecKey, new Data(this.videoDecoder.getCodecID()));
+		
+		this.videoIndex = videoIndex;
+		this.indexKey = indexKey;
+		this.codecKey = codecKey;
+		
+		//setData(indexKey, new Data(videoIndex));
+		//setData(codecKey, new Data(this.videoDecoder.getCodecID()));
 	}
 	
 	public void run()
@@ -53,6 +61,16 @@ public class RunnableVideo implements Runnable
 		BufferedImage image = null;
 		
 		Queue<MediaPacket> secondPackets = new ArrayDeque<>();
+		
+		try
+		{
+			videoData.put(videoKey).data(new Data(videoIndex)).domainKey(indexKey).start();
+			videoData.put(videoKey).data(new Data(videoDecoder.getCodecID())).domainKey(codecKey).start();
+		}
+		catch (IOException e1)
+		{
+			e1.printStackTrace();
+		}
 		
 		videoDecoder.open(null, null);
 		
@@ -119,7 +137,7 @@ public class RunnableVideo implements Runnable
 	}
 	
 	private void setData(Number160 domainKey, Data vd)
-	{
+	{	
 		FuturePut putVideo = videoData.put(videoKey).data(vd).domainKey(domainKey).start();
 		
 		putVideo.awaitUninterruptibly();

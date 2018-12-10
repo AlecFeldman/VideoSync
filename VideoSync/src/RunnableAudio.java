@@ -31,6 +31,10 @@ public class RunnableAudio implements Runnable
 	
 	private Queue<MediaPacket> audioPackets = new ArrayDeque<>();
 	
+	private int audioIndex;
+	private Number160 indexKey;
+	private Number160 codecKey;
+	
 	public RunnableAudio(Peer client, Decoder audioDecoder, int audioIndex, Number160 audioKey,
 						 Number160 indexKey, Number160 codecKey, AtomicBoolean isMasterFinished) throws IOException
 	{
@@ -39,8 +43,12 @@ public class RunnableAudio implements Runnable
 		this.audioKey = audioKey;
 		this.isMasterFinished = isMasterFinished;
 		
-		setData(indexKey, new Data(audioIndex));
-		setData(codecKey, new Data(this.audioDecoder.getCodecID()));
+		this.audioIndex = audioIndex;
+		this.indexKey = indexKey;
+		this.codecKey = codecKey;
+		
+		//setData(indexKey, new Data(audioIndex));
+		//setData(codecKey, new Data(this.audioDecoder.getCodecID()));
 	}
 	
 	public void run()
@@ -51,6 +59,16 @@ public class RunnableAudio implements Runnable
 		ByteBuffer rawAudio = null;
 		
 		Queue<MediaPacket> secondPackets = new ArrayDeque<>();
+		
+		try
+		{
+			audioData.put(audioKey).data(new Data(audioIndex)).domainKey(indexKey).start();
+			audioData.put(audioKey).data(new Data(audioDecoder.getCodecID())).domainKey(codecKey).start();
+		}
+		catch (IOException e1)
+		{
+			e1.printStackTrace();
+		}
 		
 		audioDecoder.open(null, null);
 		

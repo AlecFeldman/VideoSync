@@ -29,6 +29,12 @@ public class MediaNetwork
 		audioIndex = (int) getMediaData(audioKey, indexKey);
 		ID audioCodec = (ID) getMediaData(audioKey, codecKey);
 		
+		System.out.println(videoIndex);
+		System.out.println(videoCodec);
+		
+		System.out.println(audioIndex);
+		System.out.println(audioCodec);
+		
 		client.objectDataReply(new ObjectDataReply()
 		{
 			@Override
@@ -62,9 +68,9 @@ public class MediaNetwork
 		});
 	}
 	
-	private Object getMediaData(Number160 key, Number160 domainKey) throws ClassNotFoundException, IOException
+	private Object getMediaData(Number160 mediaKey, Number160 domainKey) throws ClassNotFoundException, IOException
 	{
-		FutureGet getMedia = mediaData.get(key).all().domainKey(domainKey).start();
+		FutureGet getMedia = mediaData.get(mediaKey).all().domainKey(domainKey).start();
 		
 		getMedia.awaitUninterruptibly();
 		
