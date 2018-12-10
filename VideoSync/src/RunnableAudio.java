@@ -35,6 +35,8 @@ public class RunnableAudio implements Runnable
 	private Number160 indexKey;
 	private Number160 codecKey;
 	
+	private boolean isMaster;
+	
 	public RunnableAudio(Peer client, Decoder audioDecoder, int audioIndex, Number160 audioKey,
 						 Number160 indexKey, Number160 codecKey, AtomicBoolean isMasterFinished)
 	{
@@ -48,6 +50,8 @@ public class RunnableAudio implements Runnable
 		this.indexKey = indexKey;
 		this.codecKey = codecKey;
 		
+		isMaster = true;
+		
 		//setData(indexKey, new Data(audioIndex));
 		//setData(codecKey, new Data(this.audioDecoder.getCodecID()));
 	}
@@ -56,7 +60,9 @@ public class RunnableAudio implements Runnable
 	{
 		this.audioDecoder = audioDecoder;
 		
-		isMasterFinished.set(true);
+		isMaster = false;
+		
+		//isMasterFinished.set(true);
 	}
 	
 	public void run()
@@ -68,14 +74,17 @@ public class RunnableAudio implements Runnable
 		
 		Queue<MediaPacket> secondPackets = new ArrayDeque<>();
 		
-		try
+		if (isMaster)
 		{
-			audioData.put(audioKey).data(new Data(audioIndex)).domainKey(indexKey).start();
-			audioData.put(audioKey).data(new Data(audioDecoder.getCodecID())).domainKey(codecKey).start();
-		}
-		catch (IOException e1)
-		{
-			e1.printStackTrace();
+			try
+			{
+				audioData.put(audioKey).data(new Data(audioIndex)).domainKey(indexKey).start();
+				audioData.put(audioKey).data(new Data(audioDecoder.getCodecID())).domainKey(codecKey).start();
+			}
+			catch (IOException e1)
+			{
+				e1.printStackTrace();
+			}
 		}
 		
 		audioDecoder.open(null, null);
@@ -121,7 +130,10 @@ public class RunnableAudio implements Runnable
 				}
 				while (offset < sp.getSize());
 				
-				audioData.send(audioKey).object(new MediaPacketSerialized(sp)).start();
+				if (isMaster)
+				{
+					audioData.send(audioKey).object(new MediaPacketSerialized(sp)).start();
+				}
 			}
 		}
 		

@@ -62,7 +62,7 @@ public class RunnableVideo implements Runnable
 		
 		isMaster = false;
 		
-		isMasterFinished.set(true);
+		//isMasterFinished.set(true);
 	}
 	
 	public void run()
