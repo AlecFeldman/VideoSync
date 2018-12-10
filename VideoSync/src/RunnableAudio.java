@@ -36,9 +36,10 @@ public class RunnableAudio implements Runnable
 	private Number160 codecKey;
 	
 	public RunnableAudio(Peer client, Decoder audioDecoder, int audioIndex, Number160 audioKey,
-						 Number160 indexKey, Number160 codecKey, AtomicBoolean isMasterFinished) throws IOException
+						 Number160 indexKey, Number160 codecKey, AtomicBoolean isMasterFinished)
 	{
-		this.audioData = new PeerBuilderDHT(client).start();
+		audioData = new PeerBuilderDHT(client).start();
+		
 		this.audioDecoder = audioDecoder;
 		this.audioKey = audioKey;
 		this.isMasterFinished = isMasterFinished;
@@ -49,6 +50,13 @@ public class RunnableAudio implements Runnable
 		
 		//setData(indexKey, new Data(audioIndex));
 		//setData(codecKey, new Data(this.audioDecoder.getCodecID()));
+	}
+	
+	public RunnableAudio(Decoder audioDecoder)
+	{
+		this.audioDecoder = audioDecoder;
+		
+		isMasterFinished.set(true);
 	}
 	
 	public void run()
@@ -113,7 +121,6 @@ public class RunnableAudio implements Runnable
 				}
 				while (offset < sp.getSize());
 				
-				// Don't need this on client end.
 				audioData.send(audioKey).object(new MediaPacketSerialized(sp)).start();
 			}
 		}

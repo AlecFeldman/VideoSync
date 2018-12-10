@@ -35,10 +35,13 @@ public class RunnableVideo implements Runnable
 	private Number160 indexKey;
 	private Number160 codecKey;
 	
+	private boolean isMaster;
+	
 	public RunnableVideo(Peer client, Decoder videoDecoder, int videoIndex, Number160 videoKey,
-						 Number160 indexKey, Number160 codecKey, AtomicBoolean isMasterFinished) throws IOException
+						 Number160 indexKey, Number160 codecKey, AtomicBoolean isMasterFinished)
 	{
-		this.videoData = new PeerBuilderDHT(client).start();
+		videoData = new PeerBuilderDHT(client).start();
+		
 		this.videoDecoder = videoDecoder;
 		this.videoKey = videoKey;
 		this.isMasterFinished = isMasterFinished;
@@ -47,8 +50,19 @@ public class RunnableVideo implements Runnable
 		this.indexKey = indexKey;
 		this.codecKey = codecKey;
 		
+		isMaster = true;
+		
 		//setData(indexKey, new Data(videoIndex));
 		//setData(codecKey, new Data(this.videoDecoder.getCodecID()));
+	}
+	
+	public RunnableVideo(Decoder videoDecoder)
+	{
+		this.videoDecoder = videoDecoder;
+		
+		isMaster = false;
+		
+		isMasterFinished.set(true);
 	}
 	
 	public void run()
@@ -62,14 +76,17 @@ public class RunnableVideo implements Runnable
 		
 		Queue<MediaPacket> secondPackets = new ArrayDeque<>();
 		
-		try
+		if (isMaster)
 		{
-			videoData.put(videoKey).data(new Data(videoIndex)).domainKey(indexKey).start();
-			videoData.put(videoKey).data(new Data(videoDecoder.getCodecID())).domainKey(codecKey).start();
-		}
-		catch (IOException e1)
-		{
-			e1.printStackTrace();
+			try
+			{
+				videoData.put(videoKey).data(new Data(videoIndex)).domainKey(indexKey).start();
+				videoData.put(videoKey).data(new Data(videoDecoder.getCodecID())).domainKey(codecKey).start();
+			}
+			catch (IOException e1)
+			{
+				e1.printStackTrace();
+			}
 		}
 		
 		videoDecoder.open(null, null);
@@ -111,8 +128,10 @@ public class RunnableVideo implements Runnable
 				}
 				while (offset < sp.getSize());
 				
-				// Don't need this on client end.
-				videoData.send(videoKey).object(new MediaPacketSerialized(sp)).start();
+				if (isMaster)
+				{
+					videoData.send(videoKey).object(new MediaPacketSerialized(sp)).start();
+				}
 				
 				try
 				{
@@ -137,7 +156,7 @@ public class RunnableVideo implements Runnable
 	}
 	
 	private void setData(Number160 domainKey, Data vd)
-	{	
+	{
 		FuturePut putVideo = videoData.put(videoKey).data(vd).domainKey(domainKey).start();
 		
 		putVideo.awaitUninterruptibly();
