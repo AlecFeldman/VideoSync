@@ -10,6 +10,7 @@ import io.humble.video.MediaPacket;
 import io.humble.video.javaxsound.AudioFrame;
 import io.humble.video.javaxsound.MediaAudioConverter;
 import io.humble.video.javaxsound.MediaAudioConverterFactory;
+import net.tomp2p.dht.FuturePut;
 import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.p2p.Peer;
@@ -17,9 +18,7 @@ import net.tomp2p.peers.Number160;
 import net.tomp2p.storage.Data;
 
 public class RunnableAudio implements Runnable
-{
-	int audioIndex;
-	
+{	
 	private AtomicBoolean isMasterFinished;
 	
 	private Object audioPacketLock = new Object();
@@ -29,21 +28,19 @@ public class RunnableAudio implements Runnable
 	private PeerDHT audioData;
 	
 	private Number160 audioKey;
-	private Number160 indexKey;
-	private Number160 codecKey;
 	
 	private Queue<MediaPacket> audioPackets = new ArrayDeque<>();
 	
 	public RunnableAudio(Peer client, Decoder audioDecoder, int audioIndex, Number160 audioKey,
-						 Number160 indexKey, Number160 codecKey, AtomicBoolean isMasterFinished)
+						 Number160 indexKey, Number160 codecKey, AtomicBoolean isMasterFinished) throws IOException
 	{
 		this.audioData = new PeerBuilderDHT(client).start();
 		this.audioDecoder = audioDecoder;
-		this.audioIndex = audioIndex;
 		this.audioKey = audioKey;
-		this.indexKey = indexKey;
-		this.codecKey = codecKey;
 		this.isMasterFinished = isMasterFinished;
+		
+		setData(indexKey, new Data(audioIndex));
+		setData(codecKey, new Data(this.audioDecoder.getCodecID()));
 	}
 	
 	public void run()
@@ -54,9 +51,6 @@ public class RunnableAudio implements Runnable
 		ByteBuffer rawAudio = null;
 		
 		Queue<MediaPacket> secondPackets = new ArrayDeque<>();
-		
-		// Don't need this on client end.
-		setRouteData();
 		
 		audioDecoder.open(null, null);
 		
@@ -98,7 +92,8 @@ public class RunnableAudio implements Runnable
 						audioConnection.play(rawAudio);
 					}
 					offset += bytesRead;
-				} while (offset < sp.getSize());
+				}
+				while (offset < sp.getSize());
 				
 				// Don't need this on client end.
 				audioData.send(audioKey).object(new MediaPacketSerialized(sp)).start();
@@ -116,17 +111,11 @@ public class RunnableAudio implements Runnable
 		}
 	}
 	
-	private void setRouteData()
+	private void setData(Number160 domainKey, Data ad)
 	{
-		try
-		{
-			audioData.put(audioKey).data(new Data(audioIndex)).domainKey(indexKey).start();
-			audioData.put(audioKey).data(new Data(audioDecoder.getCodecID())).domainKey(codecKey).start();
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
+		FuturePut putAudio = audioData.put(audioKey).data(ad).domainKey(domainKey).start();
+		
+		putAudio.awaitUninterruptibly();
 	}
 	
 	private boolean isQueueEmpty()

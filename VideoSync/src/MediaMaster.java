@@ -15,7 +15,6 @@ public class MediaMaster
 					   Number160 audioKey, Number160 indexKey, Number160 codecKey) throws InterruptedException, IOException
 	{
 		int totalStreams;
-		int packetIndex;
 		int videoIndex = -1;
 		int audioIndex = -1;
 		
@@ -70,13 +69,11 @@ public class MediaMaster
 		
 		while (mediaContainer.read(packet) >= 0)
 		{
-			packetIndex = packet.getStreamIndex();
-			
-			if (packetIndex == videoIndex)
+			if (packet.getStreamIndex() == videoIndex)
 			{
 				video.addPacket(packet);
 			}
-			else if (packetIndex == audioIndex)
+			else if (packet.getStreamIndex() == audioIndex)
 			{
 				audio.addPacket(packet);
 			}

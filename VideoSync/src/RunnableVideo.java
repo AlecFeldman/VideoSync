@@ -10,6 +10,7 @@ import io.humble.video.MediaPicture;
 import io.humble.video.awt.ImageFrame;
 import io.humble.video.awt.MediaPictureConverter;
 import io.humble.video.awt.MediaPictureConverterFactory;
+import net.tomp2p.dht.FuturePut;
 import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.p2p.Peer;
@@ -18,8 +19,6 @@ import net.tomp2p.storage.Data;
 
 public class RunnableVideo implements Runnable
 {
-	private int videoIndex;
-	
 	private AtomicBoolean isMasterFinished;
 	
 	private Object videoPacketLock = new Object();
@@ -29,21 +28,19 @@ public class RunnableVideo implements Runnable
 	private PeerDHT videoData;
 	
 	private Number160 videoKey;
-	private Number160 indexKey;
-	private Number160 codecKey;
 	
 	private Queue<MediaPacket> videoPackets = new ArrayDeque<>();
 	
 	public RunnableVideo(Peer client, Decoder videoDecoder, int videoIndex, Number160 videoKey,
-						 Number160 indexKey, Number160 codecKey, AtomicBoolean isMasterFinished)
+						 Number160 indexKey, Number160 codecKey, AtomicBoolean isMasterFinished) throws IOException
 	{
 		this.videoData = new PeerBuilderDHT(client).start();
 		this.videoDecoder = videoDecoder;
-		this.videoIndex = videoIndex;
 		this.videoKey = videoKey;
-		this.indexKey = indexKey;
-		this.codecKey = codecKey;
 		this.isMasterFinished = isMasterFinished;
+
+		setData(indexKey, new Data(videoIndex));
+		setData(codecKey, new Data(this.videoDecoder.getCodecID()));
 	}
 	
 	public void run()
@@ -56,9 +53,6 @@ public class RunnableVideo implements Runnable
 		BufferedImage image = null;
 		
 		Queue<MediaPacket> secondPackets = new ArrayDeque<>();
-		
-		// Don't need this on client end.
-		setRouteData();
 		
 		videoDecoder.open(null, null);
 		
@@ -96,7 +90,8 @@ public class RunnableVideo implements Runnable
 						window.setImage(image);
 					}
 					offset += bytesRead;
-				} while (offset < sp.getSize());
+				}
+				while (offset < sp.getSize());
 				
 				// Don't need this on client end.
 				videoData.send(videoKey).object(new MediaPacketSerialized(sp)).start();
@@ -123,17 +118,11 @@ public class RunnableVideo implements Runnable
 		}
 	}
 	
-	private void setRouteData()
+	private void setData(Number160 domainKey, Data vd)
 	{
-		try
-		{
-			videoData.put(videoKey).data(new Data(videoIndex)).domainKey(indexKey).start();
-			videoData.put(videoKey).data(new Data(videoDecoder.getCodecID())).domainKey(codecKey).start();
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
+		FuturePut putVideo = videoData.put(videoKey).data(vd).domainKey(domainKey).start();
+		
+		putVideo.awaitUninterruptibly();
 	}
 	
 	private boolean isQueueEmpty()
