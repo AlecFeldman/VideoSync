@@ -29,8 +29,6 @@ public class Theater
 		
 		randomSocket.close();
 		
-		ArrayList<PeerAddress> connectedClients = new ArrayList<>();
-		
 		Number160 theaterKey = new Number160();
 		Number160 clientID = new Number160(new Random());
 		
@@ -53,14 +51,14 @@ public class Theater
 			master = client.bootstrap().peerAddress(client.peerAddress()).start();
 			master.awaitUninterruptibly();
 			
-			clientData.put(theaterKey).data(new Data(new ArrayList<PeerAddress>())).start().awaitUninterruptibly();
-			
 			// Temporary
-			connectedClients.add(client.peerAddress());
 			MediaNetwork.createPacketListener(client);
+			System.out.println("IP: " + client.peerAddress().inetAddress().getHostAddress() +
+							   "\nPort: " + client.peerAddress().tcpPort());
+			keyboard.nextLine();
 			// Temporary
 			
-			MediaMaster.play("./resources/test.mp4", client, connectedClients);
+			MediaMaster.play("./resources/test.mp4", clientData, theaterKey);
 		}
 		else if (option == 2)
 		{
@@ -78,12 +76,6 @@ public class Theater
 			master.awaitUninterruptibly();
 			
 			MediaNetwork.createPacketListener(client);
-			getData = clientData.get(theaterKey).start();
-			getData.awaitUninterruptibly();
-			
-			connectedClients = (ArrayList<PeerAddress>) getData.dataMap().values().iterator().next().object();
-			connectedClients.add(client.peerAddress());
-			clientData.put(theaterKey).data(new Data(connectedClients)).start().awaitUninterruptibly();
 		}
 	}
 }

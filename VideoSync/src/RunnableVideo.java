@@ -64,15 +64,6 @@ public class RunnableVideo implements Runnable
 				offset = 0;
 				bytesRead = 0;
 				
-				try
-				{
-					Thread.sleep(1000 / 30);
-				}
-				catch (InterruptedException e)
-				{
-					e.printStackTrace();
-				}
-				
 				do
 				{
 					bytesRead += videoDecoder.decode(videoFrame, sp, offset);
@@ -83,6 +74,15 @@ public class RunnableVideo implements Runnable
 					}
 					offset += bytesRead;
 				} while (offset < sp.getSize());
+				
+				try
+				{
+					Thread.sleep(1000 / 30);
+				}
+				catch (InterruptedException e)
+				{
+					e.printStackTrace();
+				}
 			}
 		}
 		

@@ -17,7 +17,7 @@ public class MediaNetwork
 	public static void createPacketListener(Peer client)
 	{	
 		client.objectDataReply(new ObjectDataReply()
-		{		
+		{
 			@Override
 			public Object reply(PeerAddress sender, Object request)
 			{
