@@ -1,4 +1,5 @@
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -13,22 +14,34 @@ import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.p2p.Peer;
 import net.tomp2p.peers.Number160;
+import net.tomp2p.storage.Data;
 
 public class RunnableVideo implements Runnable
 {
+	private int videoIndex;
+	
 	private AtomicBoolean isMasterFinished;
 	
 	private Object videoPacketLock = new Object();
 	
 	private Decoder videoDecoder;
 	
-	private Queue<MediaPacket> videoPackets = new ArrayDeque<>();
-	
 	private PeerDHT videoData;
 	
-	public RunnableVideo(Decoder videoDecoder, Peer client, AtomicBoolean isMasterFinished)
+	private Number160 videoKey;
+	private Number160 indexKey;
+	private Number160 codecKey;
+	
+	private Queue<MediaPacket> videoPackets = new ArrayDeque<>();
+	
+	public RunnableVideo(Decoder videoDecoder, int videoIndex, Number160 videoKey, Number160 indexKey,
+						 Number160 codecKey, Peer client, AtomicBoolean isMasterFinished)
 	{
 		this.videoDecoder = videoDecoder;
+		this.videoIndex = videoIndex;
+		this.videoKey = videoKey;
+		this.indexKey = indexKey;
+		this.codecKey = codecKey;
 		this.videoData = new PeerBuilderDHT(client).start();
 		this.isMasterFinished = isMasterFinished;
 	}
@@ -38,13 +51,14 @@ public class RunnableVideo implements Runnable
 		int offset;
 		int bytesRead;
 		
-		Number160 videoKey = Number160.createHash("video");
-		
 		ImageFrame window = ImageFrame.make();
 		
 		BufferedImage image = null;
 		
 		Queue<MediaPacket> secondPackets = new ArrayDeque<>();
+		
+		// Don't need this on client end.
+		setRouteData();
 		
 		videoDecoder.open(null, null);
 		
@@ -84,6 +98,7 @@ public class RunnableVideo implements Runnable
 					offset += bytesRead;
 				} while (offset < sp.getSize());
 				
+				// Don't need this on client end.
 				videoData.send(videoKey).object(new MediaPacketSerialized(sp)).start();
 				
 				try
@@ -100,7 +115,7 @@ public class RunnableVideo implements Runnable
 		window.dispose();
 	}
 	
-	public void addVideoPacket(MediaPacket packet)
+	public void addPacket(MediaPacket packet)
 	{
 		synchronized(videoPacketLock)
 		{
@@ -108,7 +123,20 @@ public class RunnableVideo implements Runnable
 		}
 	}
 	
-	public boolean isQueueEmpty()
+	private void setRouteData()
+	{
+		try
+		{
+			videoData.put(videoKey).data(new Data(videoIndex)).domainKey(indexKey).start();
+			videoData.put(videoKey).data(new Data(videoDecoder.getCodecID())).domainKey(codecKey).start();
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+	}
+	
+	private boolean isQueueEmpty()
 	{
 		synchronized(videoPacketLock)
 		{

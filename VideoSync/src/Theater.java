@@ -4,9 +4,6 @@ import java.net.ServerSocket;
 import java.util.Random;
 import java.util.Scanner;
 
-import net.tomp2p.dht.FutureGet;
-import net.tomp2p.dht.PeerBuilderDHT;
-import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.futures.FutureBootstrap;
 import net.tomp2p.p2p.Peer;
 import net.tomp2p.p2p.PeerBuilder;
@@ -26,6 +23,10 @@ public class Theater
 		randomSocket.close();
 		
 		Number160 clientID = new Number160(new Random());
+		Number160 videoKey = Number160.createHash("video");
+		Number160 audioKey = Number160.createHash("audio");
+		Number160 indexKey = Number160.createHash("index");
+		Number160 codecKey = Number160.createHash("codec");
 		
 		Peer client = new PeerBuilder(clientID).ports(randomSocket.getLocalPort()).start();
 		
@@ -37,18 +38,17 @@ public class Theater
 		keyboard.nextLine();
 		
 		if (option == 1)
-		{	
+		{
 			master = client.bootstrap().peerAddress(client.peerAddress()).start();
 			master.awaitUninterruptibly();
 			
 			// Temporary
-			MediaNetwork.createPacketListener(client);
 			System.out.println("IP: " + client.peerAddress().inetAddress().getHostAddress() +
 							   "\nPort: " + client.peerAddress().tcpPort());
 			keyboard.nextLine();
 			// Temporary
 			
-			MediaMaster.play("./resources/test.mp4", client);
+			new MediaMaster("./resources/test.mp4", client, videoKey, audioKey, indexKey, codecKey);
 		}
 		else if (option == 2)
 		{
@@ -62,7 +62,7 @@ public class Theater
 			master = masterBuilder.start();
 			master.awaitUninterruptibly();
 			
-			MediaNetwork.createPacketListener(client);
+			new MediaNetwork(client, videoKey, audioKey, indexKey, codecKey);
 		}
 	}
 }

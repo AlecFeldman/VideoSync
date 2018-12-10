@@ -1,21 +1,28 @@
+import java.io.IOException;
+
 import io.humble.ferry.Buffer;
 import io.humble.video.MediaPacket;
-
+import net.tomp2p.dht.PeerBuilderDHT;
+import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.p2p.Peer;
+import net.tomp2p.peers.Number160;
 import net.tomp2p.peers.PeerAddress;
 import net.tomp2p.rpc.ObjectDataReply;
 
 public class MediaNetwork
-{
-	
+{	
 	private RunnableVideo video;
-	private RunnableAudio audio;
 	
-	private Thread videoThread = new Thread(video);
-	private Thread audioThread = new Thread(video);
-	
-	public static void createPacketListener(Peer client)
-	{	
+	public MediaNetwork(Peer client, Number160 videoKey, Number160 audioKey, Number160 indexKey, Number160 codecKey) throws ClassNotFoundException, IOException
+	{
+		PeerDHT mediaData = new PeerBuilderDHT(client).start();
+		
+		System.out.println(mediaData.get(videoKey).all().domainKey(indexKey).start().data().object());
+		mediaData.get(videoKey).all().domainKey(codecKey).start();
+		
+		mediaData.get(audioKey).all().domainKey(indexKey).start();
+		mediaData.get(audioKey).all().domainKey(codecKey).start();
+		
 		client.objectDataReply(new ObjectDataReply()
 		{
 			@Override
@@ -35,7 +42,7 @@ public class MediaNetwork
 				packet.setPosition(packetSerialized.getPosition());
 				packet.setConvergenceDuration(packetSerialized.getConvergenceDuration());
 				
-				System.out.println(packet);
+				//System.out.println(packet);
 				
 				return "success";
 			}

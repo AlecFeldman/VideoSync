@@ -1,25 +1,23 @@
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.humble.video.Codec;
 import io.humble.video.Decoder;
 import io.humble.video.Demuxer;
 import io.humble.video.DemuxerStream;
 import io.humble.video.MediaDescriptor;
 import io.humble.video.MediaPacket;
-import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.p2p.Peer;
 import net.tomp2p.peers.Number160;
-import net.tomp2p.storage.Data;
 
 public class MediaMaster
 {
-	public static void play(String mediaFile, Peer client) throws InterruptedException, IOException
+	public MediaMaster(String mediaFile, Peer client, Number160 videoKey,
+					   Number160 audioKey, Number160 indexKey, Number160 codecKey) throws InterruptedException, IOException
 	{
 		int totalStreams;
 		int packetIndex;
-		int videoStreamIndex = -1;
-		int audioStreamIndex = -1;
+		int videoIndex = -1;
+		int audioIndex = -1;
 		
 		AtomicBoolean isMasterFinished = new AtomicBoolean(false);
 		
@@ -51,43 +49,43 @@ public class MediaMaster
 				if (mediaDecoder.getCodecType() == MediaDescriptor.Type.MEDIA_VIDEO)
 				{
 					videoDecoder = mediaDecoder;
-					videoStreamIndex = i;
+					videoIndex = i;
 				}
 				else if (mediaDecoder.getCodecType() == MediaDescriptor.Type.MEDIA_AUDIO)
 				{
 					audioDecoder = mediaDecoder;
-					audioStreamIndex = i;
+					audioIndex = i;
 				}
 			}
 	    }
 		
-		video = new RunnableVideo(videoDecoder, client, isMasterFinished);
-		audio = new RunnableAudio(audioDecoder, client, isMasterFinished);
+		video = new RunnableVideo(videoDecoder, videoIndex, videoKey, indexKey, codecKey, client, isMasterFinished);
+		//audio = new RunnableAudio(audioDecoder, audioIndex, client, isMasterFinished);
 		
 		videoThread = new Thread(video);
-		audioThread = new Thread(audio);
+		//audioThread = new Thread(audio);
 		
 		videoThread.start();
-		audioThread.start();
+		//audioThread.start();
 		
 		while (mediaContainer.read(packet) >= 0)
 		{
 			packetIndex = packet.getStreamIndex();
 			
-			if (packetIndex == videoStreamIndex)
+			if (packetIndex == videoIndex)
 			{
-				video.addVideoPacket(packet);
+				video.addPacket(packet);
 			}
-			else if (packetIndex == audioStreamIndex)
+			else if (packetIndex == audioIndex)
 			{
-				audio.addAudioPacket(packet);
+				//audio.addAudioPacket(packet);
 			}
 		}
 		
 		isMasterFinished.set(true);
 		
 		videoThread.join();
-		audioThread.join();
+		//audioThread.join();
 		
 		mediaContainer.close();
 	}
