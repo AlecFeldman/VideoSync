@@ -117,11 +117,11 @@ public class Media
 	
 	public void waitForMedia() throws ClassNotFoundException, IOException
 	{
-		System.out.println((int) mediaData.getData(mediaData.getVideoKey(), mediaData.getIndexKey()));
-		System.out.println((ID) mediaData.getData(mediaData.getVideoKey(), mediaData.getCodecKey()));
+		int videoIndex = (int) mediaData.getData(mediaData.getVideoKey(), mediaData.getIndexKey());
+		int audioIndex = (int) mediaData.getData(mediaData.getAudioKey(), mediaData.getIndexKey());
 		
-		System.out.println((int) mediaData.getData(mediaData.getAudioKey(), mediaData.getIndexKey()));
-		System.out.println((ID) mediaData.getData(mediaData.getAudioKey(), mediaData.getCodecKey()));
+		ID videoCodecID = (ID) mediaData.getData(mediaData.getVideoKey(), mediaData.getCodecKey());
+		ID audioCodecID = (ID) mediaData.getData(mediaData.getAudioKey(), mediaData.getCodecKey());
 		
 		client.objectDataReply(new ObjectDataReply()
 		{
@@ -142,7 +142,14 @@ public class Media
 				packet.setPosition(packetSerialized.getPosition());
 				packet.setConvergenceDuration(packetSerialized.getConvergenceDuration());
 				
-				System.out.println(packet);
+				if (packet.getStreamIndex() == videoIndex)
+				{
+					System.out.println("Video packet: " + packet);
+				}
+				else if (packet.getStreamIndex() == audioIndex)
+				{
+					System.out.println("Audio packet: " + packet);
+				}
 				
 				return "success";
 			}
