@@ -25,8 +25,6 @@ public class Theater
 		Number160 clientID = new Number160(new Random());
 		Number160 videoKey = Number160.createHash("video");
 		Number160 audioKey = Number160.createHash("audio");
-		Number160 indexKey = Number160.createHash("index");
-		Number160 codecKey = Number160.createHash("codec");
 		
 		Peer client = new PeerBuilder(clientID).ports(randomSocket.getLocalPort()).start();
 		
@@ -48,7 +46,7 @@ public class Theater
 			keyboard.nextLine();
 			// Temporary
 			
-			new MediaMaster("./resources/test.mp4", client, videoKey, audioKey, indexKey, codecKey);
+			new MediaMaster("./resources/test.mp4", client, videoKey, audioKey);
 		}
 		else if (option == 2)
 		{
@@ -62,7 +60,9 @@ public class Theater
 			master = masterBuilder.start();
 			master.awaitUninterruptibly();
 			
-			new MediaNetwork(client, videoKey, audioKey, indexKey, codecKey);
+			new MediaNetwork(client);
 		}
+		
+		keyboard.close();
 	}
 }

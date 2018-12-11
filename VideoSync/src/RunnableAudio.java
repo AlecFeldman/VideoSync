@@ -1,4 +1,3 @@
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -10,12 +9,11 @@ import io.humble.video.MediaPacket;
 import io.humble.video.javaxsound.AudioFrame;
 import io.humble.video.javaxsound.MediaAudioConverter;
 import io.humble.video.javaxsound.MediaAudioConverterFactory;
-import net.tomp2p.dht.FuturePut;
+
 import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.p2p.Peer;
 import net.tomp2p.peers.Number160;
-import net.tomp2p.storage.Data;
 
 public class RunnableAudio implements Runnable
 {	
@@ -31,38 +29,13 @@ public class RunnableAudio implements Runnable
 	
 	private Queue<MediaPacket> audioPackets = new ArrayDeque<>();
 	
-	private int audioIndex;
-	private Number160 indexKey;
-	private Number160 codecKey;
-	
-	private boolean isMaster;
-	
-	public RunnableAudio(Peer client, Decoder audioDecoder, int audioIndex, Number160 audioKey,
-						 Number160 indexKey, Number160 codecKey, AtomicBoolean isMasterFinished)
+	public RunnableAudio(Decoder audioDecoder, Number160 audioKey, Peer client, AtomicBoolean isMasterFinished)
 	{
 		audioData = new PeerBuilderDHT(client).start();
 		
 		this.audioDecoder = audioDecoder;
 		this.audioKey = audioKey;
 		this.isMasterFinished = isMasterFinished;
-		
-		this.audioIndex = audioIndex;
-		this.indexKey = indexKey;
-		this.codecKey = codecKey;
-		
-		isMaster = true;
-		
-		//setData(indexKey, new Data(audioIndex));
-		//setData(codecKey, new Data(this.audioDecoder.getCodecID()));
-	}
-	
-	public RunnableAudio(Decoder audioDecoder)
-	{
-		this.audioDecoder = audioDecoder;
-		
-		isMaster = false;
-		
-		//isMasterFinished.set(true);
 	}
 	
 	public void run()
@@ -73,19 +46,6 @@ public class RunnableAudio implements Runnable
 		ByteBuffer rawAudio = null;
 		
 		Queue<MediaPacket> secondPackets = new ArrayDeque<>();
-		
-		if (isMaster)
-		{
-			try
-			{
-				audioData.put(audioKey).data(new Data(audioIndex)).domainKey(indexKey).start();
-				audioData.put(audioKey).data(new Data(audioDecoder.getCodecID())).domainKey(codecKey).start();
-			}
-			catch (IOException e1)
-			{
-				e1.printStackTrace();
-			}
-		}
 		
 		audioDecoder.open(null, null);
 		
@@ -130,10 +90,7 @@ public class RunnableAudio implements Runnable
 				}
 				while (offset < sp.getSize());
 				
-				if (isMaster)
-				{
-					audioData.send(audioKey).object(new MediaPacketSerialized(sp)).start();
-				}
+				audioData.send(audioKey).object(new MediaPacketSerialized(sp)).start();
 			}
 		}
 		
@@ -146,13 +103,6 @@ public class RunnableAudio implements Runnable
 		{
 			audioPackets.add(MediaPacket.make(packet, true));
 		}
-	}
-	
-	private void setData(Number160 domainKey, Data ad)
-	{
-		FuturePut putAudio = audioData.put(audioKey).data(ad).domainKey(domainKey).start();
-		
-		putAudio.awaitUninterruptibly();
 	}
 	
 	private boolean isQueueEmpty()

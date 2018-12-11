@@ -1,5 +1,4 @@
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -10,12 +9,11 @@ import io.humble.video.MediaPicture;
 import io.humble.video.awt.ImageFrame;
 import io.humble.video.awt.MediaPictureConverter;
 import io.humble.video.awt.MediaPictureConverterFactory;
-import net.tomp2p.dht.FuturePut;
+
 import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.p2p.Peer;
 import net.tomp2p.peers.Number160;
-import net.tomp2p.storage.Data;
 
 public class RunnableVideo implements Runnable
 {
@@ -31,38 +29,13 @@ public class RunnableVideo implements Runnable
 	
 	private Queue<MediaPacket> videoPackets = new ArrayDeque<>();
 	
-	private int videoIndex;
-	private Number160 indexKey;
-	private Number160 codecKey;
-	
-	private boolean isMaster;
-	
-	public RunnableVideo(Peer client, Decoder videoDecoder, int videoIndex, Number160 videoKey,
-						 Number160 indexKey, Number160 codecKey, AtomicBoolean isMasterFinished)
+	public RunnableVideo(Decoder videoDecoder, Number160 videoKey, Peer client, AtomicBoolean isMasterFinished)
 	{
 		videoData = new PeerBuilderDHT(client).start();
 		
 		this.videoDecoder = videoDecoder;
 		this.videoKey = videoKey;
 		this.isMasterFinished = isMasterFinished;
-		
-		this.videoIndex = videoIndex;
-		this.indexKey = indexKey;
-		this.codecKey = codecKey;
-		
-		isMaster = true;
-		
-		//setData(indexKey, new Data(videoIndex));
-		//setData(codecKey, new Data(this.videoDecoder.getCodecID()));
-	}
-	
-	public RunnableVideo(Decoder videoDecoder)
-	{
-		this.videoDecoder = videoDecoder;
-		
-		isMaster = false;
-		
-		//isMasterFinished.set(true);
 	}
 	
 	public void run()
@@ -75,19 +48,6 @@ public class RunnableVideo implements Runnable
 		BufferedImage image = null;
 		
 		Queue<MediaPacket> secondPackets = new ArrayDeque<>();
-		
-		if (isMaster)
-		{
-			try
-			{
-				videoData.put(videoKey).data(new Data(videoIndex)).domainKey(indexKey).start();
-				videoData.put(videoKey).data(new Data(videoDecoder.getCodecID())).domainKey(codecKey).start();
-			}
-			catch (IOException e1)
-			{
-				e1.printStackTrace();
-			}
-		}
 		
 		videoDecoder.open(null, null);
 		
@@ -128,10 +88,7 @@ public class RunnableVideo implements Runnable
 				}
 				while (offset < sp.getSize());
 				
-				if (isMaster)
-				{
-					videoData.send(videoKey).object(new MediaPacketSerialized(sp)).start();
-				}
+				videoData.send(videoKey).object(new MediaPacketSerialized(sp)).start();
 				
 				try
 				{
@@ -153,13 +110,6 @@ public class RunnableVideo implements Runnable
 		{
 			videoPackets.add(MediaPacket.make(packet, true));
 		}
-	}
-	
-	private void setData(Number160 domainKey, Data vd)
-	{
-		FuturePut putVideo = videoData.put(videoKey).data(vd).domainKey(domainKey).start();
-		
-		putVideo.awaitUninterruptibly();
 	}
 	
 	private boolean isQueueEmpty()

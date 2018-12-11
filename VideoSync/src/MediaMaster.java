@@ -11,8 +11,7 @@ import net.tomp2p.peers.Number160;
 
 public class MediaMaster
 {
-	public MediaMaster(String mediaFile, Peer client, Number160 videoKey,
-					   Number160 audioKey, Number160 indexKey, Number160 codecKey) throws InterruptedException, IOException
+	public MediaMaster(String mediaFile, Peer client, Number160 videoKey, Number160 audioKey) throws InterruptedException, IOException
 	{
 		int totalStreams;
 		int videoIndex = -1;
@@ -58,8 +57,8 @@ public class MediaMaster
 			}
 	    }
 		
-		video = new RunnableVideo(client, videoDecoder, videoIndex, videoKey, indexKey, codecKey, isMasterFinished);
-		audio = new RunnableAudio(client, audioDecoder, audioIndex, audioKey, indexKey, codecKey, isMasterFinished);
+		video = new RunnableVideo(videoDecoder, videoKey, client, isMasterFinished);
+		audio = new RunnableAudio(audioDecoder, audioKey, client, isMasterFinished);
 		
 		videoThread = new Thread(video);
 		audioThread = new Thread(audio);
