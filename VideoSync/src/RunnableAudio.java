@@ -10,32 +10,23 @@ import io.humble.video.javaxsound.AudioFrame;
 import io.humble.video.javaxsound.MediaAudioConverter;
 import io.humble.video.javaxsound.MediaAudioConverterFactory;
 
-import net.tomp2p.dht.PeerBuilderDHT;
-import net.tomp2p.dht.PeerDHT;
-import net.tomp2p.p2p.Peer;
-import net.tomp2p.peers.Number160;
-
 public class RunnableAudio implements Runnable
 {	
-	private AtomicBoolean isMasterFinished;
+	private AtomicBoolean isMediaRead;
 	
 	private Object audioPacketLock = new Object();
 	
 	private Decoder audioDecoder;
 	
-	private PeerDHT audioData;
-	
-	private Number160 audioKey;
+	private MediaDHT audioData;
 	
 	private Queue<MediaPacket> audioPackets = new ArrayDeque<>();
 	
-	public RunnableAudio(Decoder audioDecoder, Number160 audioKey, Peer client, AtomicBoolean isMasterFinished)
+	public RunnableAudio(MediaDHT mediaData, Decoder audioDecoder, AtomicBoolean isMediaRead)
 	{
-		audioData = new PeerBuilderDHT(client).start();
-		
+		audioData = mediaData;
 		this.audioDecoder = audioDecoder;
-		this.audioKey = audioKey;
-		this.isMasterFinished = isMasterFinished;
+		this.isMediaRead = isMediaRead;
 	}
 	
 	public void run()
@@ -63,7 +54,7 @@ public class RunnableAudio implements Runnable
 			
 		AudioFrame audioConnection = AudioFrame.make(audioConverter.getJavaFormat());
 		
-		while (!(isMasterFinished.get() && isQueueEmpty() && secondPackets.isEmpty()))
+		while (!(isMediaRead.get() && isQueueEmpty() && secondPackets.isEmpty()))
 		{	
 			synchronized(audioPacketLock)
 			{
@@ -90,7 +81,7 @@ public class RunnableAudio implements Runnable
 				}
 				while (offset < sp.getSize());
 				
-				audioData.send(audioKey).object(new MediaPacketSerialized(sp)).start();
+				audioData.sendPacket(audioData.getAudioKey(), sp);
 			}
 		}
 		

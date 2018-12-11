@@ -12,7 +12,7 @@ import net.tomp2p.peers.Number160;
 
 public class Theater
 {
-	public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException
+	public static void main(String[] args) throws IOException, InterruptedException
 	{
 		int option;
 		
@@ -25,8 +25,12 @@ public class Theater
 		Number160 clientID = new Number160(new Random());
 		Number160 videoKey = Number160.createHash("video");
 		Number160 audioKey = Number160.createHash("audio");
+		Number160 indexKey = Number160.createHash("index");
+		Number160 codecKey = Number160.createHash("codec");
 		
 		Peer client = new PeerBuilder(clientID).ports(randomSocket.getLocalPort()).start();
+		
+		MediaDHT mediaData = new MediaDHT(client, videoKey, audioKey, indexKey, codecKey);
 		
 		BootstrapBuilder masterBuilder = new BootstrapBuilder(client);
 		FutureBootstrap master;
@@ -46,7 +50,8 @@ public class Theater
 			keyboard.nextLine();
 			// Temporary
 			
-			new MediaMaster("./resources/test.mp4", client, videoKey, audioKey);
+			Media mediaMaster = new Media("./resources/test.mp4", mediaData);
+			mediaMaster.playMedia();
 		}
 		else if (option == 2)
 		{
@@ -60,7 +65,7 @@ public class Theater
 			master = masterBuilder.start();
 			master.awaitUninterruptibly();
 			
-			new MediaNetwork(client);
+			
 		}
 		
 		keyboard.close();

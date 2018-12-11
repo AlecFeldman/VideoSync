@@ -10,32 +10,23 @@ import io.humble.video.awt.ImageFrame;
 import io.humble.video.awt.MediaPictureConverter;
 import io.humble.video.awt.MediaPictureConverterFactory;
 
-import net.tomp2p.dht.PeerBuilderDHT;
-import net.tomp2p.dht.PeerDHT;
-import net.tomp2p.p2p.Peer;
-import net.tomp2p.peers.Number160;
-
 public class RunnableVideo implements Runnable
 {
-	private AtomicBoolean isMasterFinished;
+	private AtomicBoolean isMediaRead;
 	
 	private Object videoPacketLock = new Object();
 	
 	private Decoder videoDecoder;
 	
-	private PeerDHT videoData;
-	
-	private Number160 videoKey;
+	private MediaDHT videoData;
 	
 	private Queue<MediaPacket> videoPackets = new ArrayDeque<>();
 	
-	public RunnableVideo(Decoder videoDecoder, Number160 videoKey, Peer client, AtomicBoolean isMasterFinished)
+	public RunnableVideo(MediaDHT mediaData, Decoder videoDecoder, AtomicBoolean isMediaRead)
 	{
-		videoData = new PeerBuilderDHT(client).start();
-		
+		videoData = mediaData;
 		this.videoDecoder = videoDecoder;
-		this.videoKey = videoKey;
-		this.isMasterFinished = isMasterFinished;
+		this.isMediaRead = isMediaRead;
 	}
 	
 	public void run()
@@ -61,7 +52,7 @@ public class RunnableVideo implements Runnable
 				MediaPictureConverterFactory.HUMBLE_BGR_24,
 				videoFrame);
 		
-		while (!(isMasterFinished.get() && isQueueEmpty() && secondPackets.isEmpty()))
+		while (!(isMediaRead.get() && isQueueEmpty() && secondPackets.isEmpty()))
 		{
 			synchronized(videoPacketLock)
 			{
@@ -88,7 +79,7 @@ public class RunnableVideo implements Runnable
 				}
 				while (offset < sp.getSize());
 				
-				videoData.send(videoKey).object(new MediaPacketSerialized(sp)).start();
+				videoData.sendPacket(videoData.getVideoKey(), sp);
 				
 				try
 				{
