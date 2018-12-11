@@ -10,8 +10,10 @@ import io.humble.video.javaxsound.AudioFrame;
 import io.humble.video.javaxsound.MediaAudioConverter;
 import io.humble.video.javaxsound.MediaAudioConverterFactory;
 
-public class RunnableAudio implements Runnable
-{	
+public class RunAudio implements Runnable
+{
+	private boolean isMaster;
+	
 	private AtomicBoolean isMediaRead;
 	
 	private Object audioPacketLock = new Object();
@@ -22,11 +24,19 @@ public class RunnableAudio implements Runnable
 	
 	private Queue<MediaPacket> audioPackets = new ArrayDeque<>();
 	
-	public RunnableAudio(MediaDHT mediaData, Decoder audioDecoder, AtomicBoolean isMediaRead)
+	public RunAudio(Decoder audioDecoder, MediaDHT mediaData, AtomicBoolean isMediaRead)
 	{
-		audioData = mediaData;
 		this.audioDecoder = audioDecoder;
 		this.isMediaRead = isMediaRead;
+		audioData = mediaData;
+		isMaster = true;
+	}
+	
+	public RunAudio(Decoder audioDecoder)
+	{
+		this.audioDecoder = audioDecoder;
+		isMediaRead.set(true);
+		isMaster = false;
 	}
 	
 	public void run()
@@ -81,7 +91,10 @@ public class RunnableAudio implements Runnable
 				}
 				while (offset < sp.getSize());
 				
-				audioData.sendPacket(audioData.getAudioKey(), sp);
+				if (isMaster)
+				{
+					audioData.sendPacket(audioData.getAudioKey(), sp);
+				}
 			}
 		}
 		

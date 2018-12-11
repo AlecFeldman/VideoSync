@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.humble.ferry.Buffer;
+import io.humble.video.Codec;
 import io.humble.video.Codec.ID;
 import io.humble.video.Decoder;
 import io.humble.video.Demuxer;
@@ -19,6 +20,15 @@ public class Media
 	private String mediaFile;
 	
 	private Peer client;
+	
+	private Decoder videoDecoder = null;
+	private Decoder audioDecoder = null;
+	
+	private RunVideo video;
+	private RunAudio audio;
+	
+	private Thread videoThread;
+	private Thread audioThread;
 	
 	private MediaDHT mediaData;
 	
@@ -46,16 +56,8 @@ public class Media
 		DemuxerStream stream = null;
 		
 		Decoder mediaDecoder = null;
-		Decoder videoDecoder = null;
-		Decoder audioDecoder = null;
 		
 		MediaPacket packet = MediaPacket.make();
-		
-		RunnableVideo video;
-		RunnableAudio audio;
-		
-		Thread videoThread;
-		Thread audioThread;
 		
 		mediaContainer.open(mediaFile, null, false, true, null, null);
 		totalStreams = mediaContainer.getNumStreams();
@@ -86,8 +88,8 @@ public class Media
 		mediaData.putData(mediaData.getAudioKey(), mediaData.getIndexKey(), new Data(audioIndex));
 		mediaData.putData(mediaData.getAudioKey(), mediaData.getCodecKey(), new Data(audioDecoder.getCodecID()));
 		
-		video = new RunnableVideo(mediaData, videoDecoder, isMediaRead);
-		audio = new RunnableAudio(mediaData, audioDecoder, isMediaRead);
+		video = new RunVideo(videoDecoder, mediaData, isMediaRead);
+		audio = new RunAudio(audioDecoder, mediaData, isMediaRead);
 		
 		videoThread = new Thread(video);
 		audioThread = new Thread(audio);
@@ -123,6 +125,18 @@ public class Media
 		ID videoCodecID = (ID) mediaData.getData(mediaData.getVideoKey(), mediaData.getCodecKey());
 		ID audioCodecID = (ID) mediaData.getData(mediaData.getAudioKey(), mediaData.getCodecKey());
 		
+		videoDecoder = Decoder.make(Codec.findDecodingCodec(videoCodecID));
+		audioDecoder = Decoder.make(Codec.findDecodingCodec(audioCodecID));
+		
+		video = new RunVideo(videoDecoder);
+		audio = new RunAudio(audioDecoder);
+		
+		videoThread = new Thread(video);
+		audioThread = new Thread(audio);
+		
+		videoThread.start();
+		audioThread.start();
+		
 		client.objectDataReply(new ObjectDataReply()
 		{
 			@Override
@@ -144,11 +158,11 @@ public class Media
 				
 				if (packet.getStreamIndex() == videoIndex)
 				{
-					System.out.println("Video packet: " + packet);
+					video.addPacket(packet);
 				}
 				else if (packet.getStreamIndex() == audioIndex)
 				{
-					System.out.println("Audio packet: " + packet);
+					audio.addPacket(packet);
 				}
 				
 				return "success";

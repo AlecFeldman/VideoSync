@@ -10,8 +10,10 @@ import io.humble.video.awt.ImageFrame;
 import io.humble.video.awt.MediaPictureConverter;
 import io.humble.video.awt.MediaPictureConverterFactory;
 
-public class RunnableVideo implements Runnable
+public class RunVideo implements Runnable
 {
+	private boolean isMaster;
+	
 	private AtomicBoolean isMediaRead;
 	
 	private Object videoPacketLock = new Object();
@@ -22,11 +24,19 @@ public class RunnableVideo implements Runnable
 	
 	private Queue<MediaPacket> videoPackets = new ArrayDeque<>();
 	
-	public RunnableVideo(MediaDHT mediaData, Decoder videoDecoder, AtomicBoolean isMediaRead)
+	public RunVideo(Decoder videoDecoder, MediaDHT mediaData, AtomicBoolean isMediaRead)
 	{
-		videoData = mediaData;
 		this.videoDecoder = videoDecoder;
 		this.isMediaRead = isMediaRead;
+		videoData = mediaData;
+		isMaster = true;
+	}
+	
+	public RunVideo(Decoder videoDecoder)
+	{
+		this.videoDecoder = videoDecoder;
+		isMediaRead.set(true);
+		isMaster = false;
 	}
 	
 	public void run()
@@ -79,7 +89,10 @@ public class RunnableVideo implements Runnable
 				}
 				while (offset < sp.getSize());
 				
-				videoData.sendPacket(videoData.getVideoKey(), sp);
+				if (isMaster)
+				{
+					videoData.sendPacket(videoData.getVideoKey(), sp);
+				}
 				
 				try
 				{
