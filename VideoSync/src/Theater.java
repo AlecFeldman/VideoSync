@@ -32,7 +32,6 @@ public class Theater
 		
 		MediaDHT mediaData = new MediaDHT(client, videoKey, audioKey, indexKey, codecKey);
 		
-		BootstrapBuilder masterBuilder = new BootstrapBuilder(client);
 		FutureBootstrap master;
 		
 		System.out.print("1. Create theater\n2. Join theater\nEnter option: ");
@@ -41,6 +40,8 @@ public class Theater
 		
 		if (option == 1)
 		{
+			Media mediaMaster = new Media("./resources/test.mp4", mediaData);
+			
 			master = client.bootstrap().peerAddress(client.peerAddress()).start();
 			master.awaitUninterruptibly();
 			
@@ -50,11 +51,14 @@ public class Theater
 			keyboard.nextLine();
 			// Temporary
 			
-			Media mediaMaster = new Media("./resources/test.mp4", mediaData);
 			mediaMaster.playMedia();
 		}
 		else if (option == 2)
 		{
+			BootstrapBuilder masterBuilder = new BootstrapBuilder(client);
+			
+			Media mediaClient = new Media(client, mediaData);
+			
 			System.out.print("Enter master address: ");
 			masterBuilder.inetAddress(InetAddress.getByName(keyboard.nextLine()));
 			
@@ -65,7 +69,6 @@ public class Theater
 			master = masterBuilder.start();
 			master.awaitUninterruptibly();
 			
-			Media mediaClient = new Media(client, mediaData);
 			mediaClient.waitForMedia();
 		}
 		
