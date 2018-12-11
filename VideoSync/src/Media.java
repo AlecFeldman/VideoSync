@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.humble.ferry.Buffer;
+import io.humble.video.Codec.ID;
 import io.humble.video.Decoder;
 import io.humble.video.Demuxer;
 import io.humble.video.DemuxerStream;
@@ -11,6 +12,7 @@ import io.humble.video.MediaPacket;
 import net.tomp2p.p2p.Peer;
 import net.tomp2p.peers.PeerAddress;
 import net.tomp2p.rpc.ObjectDataReply;
+import net.tomp2p.storage.Data;
 
 public class Media
 {
@@ -78,6 +80,12 @@ public class Media
 			}
 	    }
 		
+		mediaData.putData(mediaData.getVideoKey(), mediaData.getIndexKey(), new Data(videoIndex));
+		mediaData.putData(mediaData.getVideoKey(), mediaData.getCodecKey(), new Data(videoDecoder.getCodecID()));
+		
+		mediaData.putData(mediaData.getAudioKey(), mediaData.getIndexKey(), new Data(audioIndex));
+		mediaData.putData(mediaData.getAudioKey(), mediaData.getCodecKey(), new Data(audioDecoder.getCodecID()));
+		
 		video = new RunnableVideo(mediaData, videoDecoder, isMediaRead);
 		audio = new RunnableAudio(mediaData, audioDecoder, isMediaRead);
 		
@@ -107,8 +115,14 @@ public class Media
 		mediaContainer.close();
 	}
 	
-	public void waitForMedia()
+	public void waitForMedia() throws ClassNotFoundException, IOException
 	{
+		System.out.println((int) mediaData.getData(mediaData.getVideoKey(), mediaData.getIndexKey()));
+		System.out.println((ID) mediaData.getData(mediaData.getVideoKey(), mediaData.getCodecKey()));
+		
+		System.out.println((int) mediaData.getData(mediaData.getAudioKey(), mediaData.getIndexKey()));
+		System.out.println((ID) mediaData.getData(mediaData.getAudioKey(), mediaData.getCodecKey()));
+		
 		client.objectDataReply(new ObjectDataReply()
 		{
 			@Override

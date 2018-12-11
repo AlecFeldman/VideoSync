@@ -12,7 +12,7 @@ import net.tomp2p.peers.Number160;
 
 public class Theater
 {
-	public static void main(String[] args) throws IOException, InterruptedException
+	public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException
 	{
 		int option;
 		
