@@ -65,7 +65,8 @@ public class Theater
 			master = masterBuilder.start();
 			master.awaitUninterruptibly();
 			
-			
+			Media mediaClient = new Media(client, mediaData);
+			mediaClient.waitForMedia();
 		}
 		
 		keyboard.close();

@@ -16,11 +16,19 @@ public class Media
 {
 	private String mediaFile;
 	
+	private Peer client;
+	
 	private MediaDHT mediaData;
 	
 	public Media(String mediaFile, MediaDHT mediaData)
 	{
 		this.mediaFile = mediaFile;
+		this.mediaData = mediaData;
+	}
+	
+	public Media(Peer client, MediaDHT mediaData)
+	{
+		this.client = client;
 		this.mediaData = mediaData;
 	}
 	
@@ -99,7 +107,7 @@ public class Media
 		mediaContainer.close();
 	}
 	
-	public void waitForMedia(Peer client)
+	public void waitForMedia()
 	{
 		client.objectDataReply(new ObjectDataReply()
 		{
