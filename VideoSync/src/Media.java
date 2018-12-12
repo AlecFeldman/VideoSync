@@ -8,7 +8,6 @@ import io.humble.video.DemuxerStream;
 import io.humble.video.MediaDescriptor;
 import io.humble.video.MediaPacket;
 
-import net.tomp2p.dht.FutureGet;
 import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.p2p.Peer;
@@ -123,15 +122,7 @@ public class Media
 	}
 	
 	public void waitForMedia() throws ClassNotFoundException, IOException
-	{
-		mediaData = new PeerBuilderDHT(client).start();
-		FutureGet test = mediaData.get(mediaKey).start();
-		
-		SerializedStream testStream = (SerializedStream) test.data().object();
-		
-		System.out.println(testStream.getVideoIndex());
-		System.out.println(testStream.getAudioIndex());
-		
+	{		
 		client.objectDataReply(new ObjectDataReply()
 		{
 			@Override
@@ -139,19 +130,9 @@ public class Media
 			{
 				SerializedPacket packetSerialized = (SerializedPacket) request;
 				
-				byte[] rawData = packetSerialized.getRawData();
+				MediaPacket packet = packetSerialized.getPacket();
 				
-				MediaPacket packet = MediaPacket.make(Buffer.make(null, rawData, 0, rawData.length));
-				
-				packet.setPts(packetSerialized.getPresentationTime());
-				packet.setDts(packetSerialized.getDecompressionTime());
-				packet.setStreamIndex(packetSerialized.getStreamIndex());
-				packet.setFlags(packetSerialized.getFlags());
-				packet.setDuration(packetSerialized.getDuration());
-				packet.setPosition(packetSerialized.getPosition());
-				packet.setConvergenceDuration(packetSerialized.getConvergenceDuration());
-				
-				//System.out.println(packet);
+				System.out.println(packet);
 				
 				return "success";
 			}

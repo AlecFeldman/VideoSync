@@ -1,9 +1,8 @@
 import java.io.Serializable;
 
-import io.humble.ferry.Buffer;
 import io.humble.video.MediaPacket;
 
-public class SerializedPacket implements Serializable
+public class SerializedPacketBac implements Serializable
 {
 	private byte[] rawData;
 	
@@ -17,7 +16,7 @@ public class SerializedPacket implements Serializable
 	private long position;
 	private long convergenceDuration;
 	
-	public SerializedPacket(MediaPacket packet)
+	public SerializedPacketBac(MediaPacket packet)
 	{
 		rawData = packet.getData().getByteArray(0, packet.getSize());
 		presentationTime = packet.getPts();
@@ -29,10 +28,43 @@ public class SerializedPacket implements Serializable
 		convergenceDuration = packet.getConvergenceDuration();
 	}
 
-	public MediaPacket getPacket()
-	{	
-		MediaPacket packet = MediaPacket.make(Buffer.make(null, rawData, 0, rawData.length));
-		
-		return packet;
+	public int getStreamIndex()
+	{
+		return streamIndex;
+	}
+
+	public int getFlags()
+	{
+		return flags;
+	}
+
+	public long getPresentationTime()
+	{
+		return presentationTime;
+	}
+
+	public long getDecompressionTime()
+	{
+		return decompressionTime;
+	}
+
+	public long getDuration()
+	{
+		return duration;
+	}
+
+	public long getPosition()
+	{
+		return position;
+	}
+
+	public long getConvergenceDuration()
+	{
+		return convergenceDuration;
+	}
+	
+	public byte[] getRawData()
+	{
+		return rawData;
 	}
 }
