@@ -2,8 +2,10 @@ import java.io.Serializable;
 
 import io.humble.video.MediaPacket;
 
-public class MediaPacketSerialized implements Serializable
+public class SerializedPacket implements Serializable
 {
+	private byte[] rawData;
+	
 	private int streamIndex;
 	private int flags;
 	
@@ -14,9 +16,7 @@ public class MediaPacketSerialized implements Serializable
 	private long position;
 	private long convergenceDuration;
 	
-	private byte[] rawData;
-	
-	public MediaPacketSerialized(MediaPacket packet)
+	public SerializedPacket(MediaPacket packet)
 	{
 		rawData = packet.getData().getByteArray(0, packet.getSize());
 		presentationTime = packet.getPts();

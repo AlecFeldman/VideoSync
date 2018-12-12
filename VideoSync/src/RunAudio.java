@@ -10,6 +10,9 @@ import io.humble.video.javaxsound.AudioFrame;
 import io.humble.video.javaxsound.MediaAudioConverter;
 import io.humble.video.javaxsound.MediaAudioConverterFactory;
 
+import net.tomp2p.dht.PeerDHT;
+import net.tomp2p.peers.Number160;
+
 public class RunAudio implements Runnable
 {
 	private boolean isMaster;
@@ -20,23 +23,26 @@ public class RunAudio implements Runnable
 	
 	private Decoder audioDecoder;
 	
-	private MediaDHT audioData;
+	private PeerDHT mediaData;
+	
+	private Number160 mediaKey;
 	
 	private Queue<MediaPacket> audioPackets = new ArrayDeque<>();
 	
-	public RunAudio(Decoder audioDecoder, MediaDHT mediaData, AtomicBoolean isMediaRead)
+	public RunAudio(Decoder audioDecoder, PeerDHT mediaData, Number160 mediaKey, AtomicBoolean isMediaRead)
 	{
 		this.audioDecoder = audioDecoder;
+		this.mediaData = mediaData;
+		this.mediaKey = mediaKey;
 		this.isMediaRead = isMediaRead;
-		audioData = mediaData;
 		isMaster = true;
 	}
 	
 	public RunAudio(Decoder audioDecoder)
 	{
 		this.audioDecoder = audioDecoder;
-		isMaster = false;
 		isMediaRead = new AtomicBoolean(false);
+		isMaster = false;
 	}
 	
 	public void run()
@@ -93,7 +99,7 @@ public class RunAudio implements Runnable
 				
 				if (isMaster)
 				{
-					audioData.sendPacket(audioData.getAudioKey(), sp);
+					mediaData.send(mediaKey).object(new SerializedPacket(sp)).start();
 				}
 			}
 		}

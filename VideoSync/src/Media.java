@@ -2,24 +2,31 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.humble.ferry.Buffer;
-import io.humble.video.Codec;
-import io.humble.video.Codec.ID;
 import io.humble.video.Decoder;
 import io.humble.video.Demuxer;
 import io.humble.video.DemuxerStream;
 import io.humble.video.MediaDescriptor;
 import io.humble.video.MediaPacket;
 
+import net.tomp2p.dht.PeerBuilderDHT;
+import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.p2p.Peer;
+import net.tomp2p.peers.Number160;
 import net.tomp2p.peers.PeerAddress;
 import net.tomp2p.rpc.ObjectDataReply;
-import net.tomp2p.storage.Data;
 
 public class Media
 {
+	private int videoIndex = -1;
+	private int audioIndex = -1;
+	
 	private String mediaFile;
 	
 	private Peer client;
+	
+	private PeerDHT mediaData;
+	
+	private Number160 mediaKey;
 	
 	private Decoder videoDecoder = null;
 	private Decoder audioDecoder = null;
@@ -30,25 +37,24 @@ public class Media
 	private Thread videoThread;
 	private Thread audioThread;
 	
-	private MediaDHT mediaData;
+	private SerializedStream streamData;
 	
-	public Media(String mediaFile, MediaDHT mediaData)
+	public Media(String mediaFile, Peer client, Number160 mediaKey)
 	{
 		this.mediaFile = mediaFile;
-		this.mediaData = mediaData;
+		this.client = client;
+		this.mediaKey = mediaKey;
 	}
 	
-	public Media(Peer client, MediaDHT mediaData)
+	public Media(Peer client, Number160 mediaKey)
 	{
 		this.client = client;
-		this.mediaData = mediaData;
+		this.mediaKey = mediaKey;
 	}
 	
 	public void playMedia() throws InterruptedException, IOException
 	{
 		int totalStreams;
-		int videoIndex = -1;
-		int audioIndex = -1;
 		
 		AtomicBoolean isMediaRead = new AtomicBoolean(false);
 		
@@ -71,25 +77,23 @@ public class Media
 			{
 				if (mediaDecoder.getCodecType() == MediaDescriptor.Type.MEDIA_VIDEO)
 				{
-					videoDecoder = mediaDecoder;
 					videoIndex = i;
+					videoDecoder = mediaDecoder;
 				}
 				else if (mediaDecoder.getCodecType() == MediaDescriptor.Type.MEDIA_AUDIO)
 				{
-					audioDecoder = mediaDecoder;
 					audioIndex = i;
+					audioDecoder = mediaDecoder;
 				}
 			}
 	    }
 		
-		mediaData.putData(mediaData.getVideoKey(), mediaData.getIndexKey(), new Data(videoIndex));
-		mediaData.putData(mediaData.getVideoKey(), mediaData.getCodecKey(), new Data(videoDecoder.getCodecID()));
+		streamData = new SerializedStream(videoIndex, audioIndex, videoDecoder, audioDecoder);
+		mediaData = new PeerBuilderDHT(client).start();
+		mediaData.put(mediaKey).object(streamData).start();
 		
-		mediaData.putData(mediaData.getAudioKey(), mediaData.getIndexKey(), new Data(audioIndex));
-		mediaData.putData(mediaData.getAudioKey(), mediaData.getCodecKey(), new Data(audioDecoder.getCodecID()));
-		
-		video = new RunVideo(videoDecoder, mediaData, isMediaRead);
-		audio = new RunAudio(audioDecoder, mediaData, isMediaRead);
+		video = new RunVideo(videoDecoder, mediaData, mediaKey, isMediaRead);
+		audio = new RunAudio(audioDecoder, mediaData, mediaKey, isMediaRead);
 		
 		videoThread = new Thread(video);
 		audioThread = new Thread(audio);
@@ -117,32 +121,14 @@ public class Media
 		mediaContainer.close();
 	}
 	
-	public void waitForMedia() throws ClassNotFoundException, IOException
+	public void waitForMedia()
 	{
-		int videoIndex = (int) mediaData.getData(mediaData.getVideoKey(), mediaData.getIndexKey());
-		int audioIndex = (int) mediaData.getData(mediaData.getAudioKey(), mediaData.getIndexKey());
-		
-		ID videoCodecID = (ID) mediaData.getData(mediaData.getVideoKey(), mediaData.getCodecKey());
-		ID audioCodecID = (ID) mediaData.getData(mediaData.getAudioKey(), mediaData.getCodecKey());
-		
-		videoDecoder = Decoder.make(Codec.findDecodingCodec(videoCodecID));
-		audioDecoder = Decoder.make(Codec.findDecodingCodec(audioCodecID));
-		
-		video = new RunVideo(videoDecoder);
-		audio = new RunAudio(audioDecoder);
-		
-		videoThread = new Thread(video);
-		audioThread = new Thread(audio);
-		
-		videoThread.start();
-		audioThread.start();
-		
 		client.objectDataReply(new ObjectDataReply()
 		{
 			@Override
 			public Object reply(PeerAddress sender, Object request)
 			{
-				MediaPacketSerialized packetSerialized = (MediaPacketSerialized) request;
+				SerializedPacket packetSerialized = (SerializedPacket) request;
 				
 				byte[] rawData = packetSerialized.getRawData();
 				
@@ -156,14 +142,7 @@ public class Media
 				packet.setPosition(packetSerialized.getPosition());
 				packet.setConvergenceDuration(packetSerialized.getConvergenceDuration());
 				
-				if (packet.getStreamIndex() == videoIndex)
-				{
-					video.addPacket(packet);
-				}
-				else if (packet.getStreamIndex() == audioIndex)
-				{
-					audio.addPacket(packet);
-				}
+				System.out.println(packet);
 				
 				return "success";
 			}
