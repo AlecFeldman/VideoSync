@@ -1,7 +1,7 @@
 import io.humble.video.Decoder;
 import io.humble.video.Codec;
-//import io.humble.video.AudioFormat;
-//import io.humble.video.PixelFormat;
+import io.humble.video.AudioFormat;
+import io.humble.video.PixelFormat;
 
 import java.io.Serializable;
 
@@ -16,12 +16,12 @@ public class SerializedStream implements Serializable
 	private int videoWidth;
 	private int videoHeight;
 	private int audioRate;
-	//private int audioChannels;
+	private int audioChannels;
 	
 	private static final long serialVersionUID = 1L;
 	
-	//private PixelFormat.Type videoFormat;
-	//private AudioFormat.Type audioFormat;
+	private PixelFormat.Type videoFormat;
+	private AudioFormat.Type audioFormat;
 	
 	private Layout audioLayout;
 	
@@ -33,11 +33,11 @@ public class SerializedStream implements Serializable
 		audioCodecID = audioDecoder.getCodec().getIDAsInt();
 		videoWidth = videoDecoder.getWidth();
 		videoHeight = videoDecoder.getHeight();
-		//videoFormat = videoDecoder.getPixelFormat();
+		videoFormat = videoDecoder.getPixelFormat();
 		audioRate = audioDecoder.getSampleRate();
-		//audioChannels = audioDecoder.getChannels();
+		audioChannels = audioDecoder.getChannels();
 		audioLayout = audioDecoder.getChannelLayout();
-		//audioFormat = audioDecoder.getSampleFormat();
+		audioFormat = audioDecoder.getSampleFormat();
 	}
 
 	public int getVideoIndex()
@@ -56,7 +56,7 @@ public class SerializedStream implements Serializable
 		
 		videoDecoder.setWidth(videoWidth);
 		videoDecoder.setHeight(videoHeight);
-		//videoDecoder.setPixelFormat(videoFormat);
+		videoDecoder.setPixelFormat(videoFormat);
 		
 		return videoDecoder;
 	}
@@ -66,9 +66,9 @@ public class SerializedStream implements Serializable
 		Decoder audioDecoder = Decoder.make(Codec.findDecodingCodecByIntID(audioCodecID));
 		
 		audioDecoder.setSampleRate(audioRate);
-		//audioDecoder.setChannels(audioChannels);
+		audioDecoder.setChannels(audioChannels);
 		audioDecoder.setChannelLayout(audioLayout);
-		//audioDecoder.setSampleFormat(audioFormat);
+		audioDecoder.setSampleFormat(audioFormat);
 		
 		return audioDecoder;
 	}
