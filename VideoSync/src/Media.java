@@ -155,7 +155,7 @@ public class Media
 				MediaPacket packet = packetRequest.getPacket();
 				
 				if (packet.getStreamIndex() == videoIndex)
-				{					
+				{
 					video.addPacket(packet);
 				}
 				//else if (packet.getStreamIndex() == audioIndex)
