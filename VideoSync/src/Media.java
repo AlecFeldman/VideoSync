@@ -7,6 +7,7 @@ import io.humble.video.DemuxerStream;
 import io.humble.video.MediaDescriptor;
 import io.humble.video.MediaPacket;
 
+import net.tomp2p.dht.FutureGet;
 import net.tomp2p.dht.PeerBuilderDHT;
 import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.p2p.Peer;
@@ -120,8 +121,30 @@ public class Media
 		mediaContainer.close();
 	}
 	
-	public void waitForMedia()
+	public void waitForMedia() throws ClassNotFoundException, IOException
 	{
+		FutureGet mediaGet;
+		
+		mediaData = new PeerBuilderDHT(client).start();
+		mediaGet = mediaData.get(mediaKey).start();
+		mediaGet.awaitUninterruptibly();
+		streamData = (SerializedStream) mediaGet.data().object();
+		
+		videoIndex = streamData.getVideoIndex();
+		//audioIndex = streamData.getAudioIndex();
+		
+		videoDecoder = streamData.getVideoDecoder();
+		//audioDecoder = streamData.getAudioDecoder();
+		
+		video = new RunVideo(videoDecoder);
+		//audio = new RunAudio(audioDecoder);
+		
+		videoThread = new Thread(video);
+		//audioThread = new Thread(audio);
+		
+		videoThread.start();
+		//audioThread.start();
+		
 		client.objectDataReply(new ObjectDataReply()
 		{
 			@Override
@@ -131,7 +154,14 @@ public class Media
 				
 				MediaPacket packet = packetRequest.getPacket();
 				
-				System.out.println(packet);
+				if (packet.getStreamIndex() == videoIndex)
+				{					
+					video.addPacket(packet);
+				}
+				//else if (packet.getStreamIndex() == audioIndex)
+				//{
+				//	audio.addPacket(packet);
+				//}
 				
 				return "success";
 			}
