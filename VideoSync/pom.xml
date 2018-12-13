@@ -26,11 +26,6 @@
       <version>1.8.0-beta2</version>
     </dependency>
     <dependency>
-      <groupId>net.bramp.ffmpeg</groupId>
-      <artifactId>ffmpeg</artifactId>
-      <version>0.6.2</version>
-    </dependency>
-    <dependency>
       <groupId>io.humble</groupId>
       <artifactId>humble-video-all</artifactId>
       <version>0.3.0</version>
