@@ -1,6 +1,6 @@
 import io.humble.video.Decoder;
-import io.humble.video.AudioFormat;
 import io.humble.video.Codec;
+import io.humble.video.AudioFormat;
 import io.humble.video.PixelFormat;
 
 import java.io.Serializable;
@@ -11,13 +11,10 @@ public class SerializedStream implements Serializable
 {	
 	private int videoIndex;
 	private int audioIndex;
-	
 	private int videoCodecID;
 	private int audioCodecID;
-	
 	private int videoWidth;
 	private int videoHeight;
-	
 	private int audioRate;
 	private int audioChannels;
 	

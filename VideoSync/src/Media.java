@@ -1,7 +1,6 @@
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.humble.ferry.Buffer;
 import io.humble.video.Decoder;
 import io.humble.video.Demuxer;
 import io.humble.video.DemuxerStream;
@@ -121,16 +120,16 @@ public class Media
 		mediaContainer.close();
 	}
 	
-	public void waitForMedia() throws ClassNotFoundException, IOException
-	{		
+	public void waitForMedia()
+	{
 		client.objectDataReply(new ObjectDataReply()
 		{
 			@Override
 			public Object reply(PeerAddress sender, Object request)
 			{
-				SerializedPacket packetSerialized = (SerializedPacket) request;
+				SerializedPacket packetRequest = (SerializedPacket) request;
 				
-				MediaPacket packet = packetSerialized.getPacket();
+				MediaPacket packet = packetRequest.getPacket();
 				
 				System.out.println(packet);
 				
