@@ -8,11 +8,15 @@ import java.io.Serializable;
 import io.humble.video.AudioChannel.Layout;
 
 public class SerializedStream implements Serializable
-{	
+{
 	private int videoIndex;
 	private int audioIndex;
 	private int videoCodecID;
 	private int audioCodecID;
+	private int videoFlags;
+	private int videoFlagsTwo;
+	private int audioFlags;
+	private int audioFlagsTwo;
 	private int videoWidth;
 	private int videoHeight;
 	private int audioRate;
@@ -31,6 +35,10 @@ public class SerializedStream implements Serializable
 		this.audioIndex = audioIndex;
 		videoCodecID = videoDecoder.getCodec().getIDAsInt();
 		audioCodecID = audioDecoder.getCodec().getIDAsInt();
+		videoFlags = videoDecoder.getFlags();
+		videoFlagsTwo = videoDecoder.getFlags2();
+		audioFlags = audioDecoder.getFlags();
+		audioFlagsTwo = audioDecoder.getFlags2();
 		videoWidth = videoDecoder.getWidth();
 		videoHeight = videoDecoder.getHeight();
 		videoFormat = videoDecoder.getPixelFormat();
@@ -54,6 +62,8 @@ public class SerializedStream implements Serializable
 	{
 		Decoder videoDecoder = Decoder.make(Codec.findDecodingCodecByIntID(videoCodecID));
 		
+		videoDecoder.setFlags(videoFlags);
+		videoDecoder.setFlags2(videoFlagsTwo);
 		videoDecoder.setWidth(videoWidth);
 		videoDecoder.setHeight(videoHeight);
 		videoDecoder.setPixelFormat(videoFormat);
@@ -65,6 +75,8 @@ public class SerializedStream implements Serializable
 	{
 		Decoder audioDecoder = Decoder.make(Codec.findDecodingCodecByIntID(audioCodecID));
 		
+		audioDecoder.setFlags(audioFlags);
+		audioDecoder.setFlags2(audioFlagsTwo);
 		audioDecoder.setSampleRate(audioRate);
 		audioDecoder.setChannels(audioChannels);
 		audioDecoder.setChannelLayout(audioLayout);

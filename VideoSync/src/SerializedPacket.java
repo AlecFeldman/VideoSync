@@ -26,7 +26,6 @@ public class SerializedPacket implements Serializable
 	public SerializedPacket(MediaPacket packet)
 	{
 		rawData = packet.getData().getByteArray(0, packet.getSize());
-		
 		index = packet.getStreamIndex();
 		flags = packet.getFlags();
 		numerator = packet.getTimeBase().getNumerator();
@@ -38,7 +37,6 @@ public class SerializedPacket implements Serializable
 		position = packet.getPosition();
 		timeStamp = packet.getTimeStamp();
 		isKey = packet.isKeyPacket();
-		
 	}
 
 	public MediaPacket getPacket()
