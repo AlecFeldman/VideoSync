@@ -29,14 +29,11 @@ public class SerializedStream implements Serializable
 	{
 		this.videoIndex = videoIndex;
 		this.audioIndex = audioIndex;
-		
 		videoCodecID = videoDecoder.getCodec().getIDAsInt();
 		audioCodecID = audioDecoder.getCodec().getIDAsInt();
-		
 		videoWidth = videoDecoder.getWidth();
 		videoHeight = videoDecoder.getHeight();
 		videoFormat = videoDecoder.getPixelFormat();
-		
 		audioRate = audioDecoder.getSampleRate();
 		audioChannels = audioDecoder.getChannels();
 		audioLayout = audioDecoder.getChannelLayout();

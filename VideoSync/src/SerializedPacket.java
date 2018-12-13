@@ -10,6 +10,8 @@ public class SerializedPacket implements Serializable
 	
 	private int index;
 	private int flags;
+	private int numerator;
+	private int denominator;
 	
 	private static final long serialVersionUID = 1L;
 	private long presentationTime;
@@ -21,13 +23,14 @@ public class SerializedPacket implements Serializable
 	
 	private boolean isKey;
 	
-	private Rational timeBase;
-	
 	public SerializedPacket(MediaPacket packet)
 	{
 		rawData = packet.getData().getByteArray(0, packet.getSize());
+		
 		index = packet.getStreamIndex();
 		flags = packet.getFlags();
+		numerator = packet.getTimeBase().getNumerator();
+		denominator = packet.getTimeBase().getDenominator();
 		presentationTime = packet.getPts();
 		decompressionTime = packet.getDts();
 		duration = packet.getDuration();
@@ -35,7 +38,7 @@ public class SerializedPacket implements Serializable
 		position = packet.getPosition();
 		timeStamp = packet.getTimeStamp();
 		isKey = packet.isKeyPacket();
-		timeBase = packet.getTimeBase();
+		
 	}
 
 	public MediaPacket getPacket()
@@ -51,7 +54,7 @@ public class SerializedPacket implements Serializable
 		packet.setPosition(position);
 		packet.setTimeStamp(timeStamp);
 		packet.setKeyPacket(isKey);
-		packet.setTimeBase(timeBase);
+		packet.setTimeBase(Rational.make(numerator, denominator));
 		
 		return packet;
 	}
