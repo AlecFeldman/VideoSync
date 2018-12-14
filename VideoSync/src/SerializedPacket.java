@@ -1,4 +1,5 @@
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 
 import io.humble.ferry.Buffer;
 import io.humble.video.MediaPacket;
@@ -6,7 +7,7 @@ import io.humble.video.Rational;
 
 public class SerializedPacket implements Serializable
 {
-	private byte[] rawData;
+	private ByteBuffer rawData;
 	
 	private int index;
 	private int flags;
@@ -25,7 +26,7 @@ public class SerializedPacket implements Serializable
 	
 	public SerializedPacket(MediaPacket packet)
 	{
-		rawData = packet.getData().getByteArray(0, packet.getSize());
+		rawData = packet.getData().getByteBuffer(0, packet.getSize());
 		index = packet.getStreamIndex();
 		flags = packet.getFlags();
 		numerator = packet.getTimeBase().getNumerator();
@@ -41,7 +42,7 @@ public class SerializedPacket implements Serializable
 
 	public MediaPacket getPacket()
 	{
-		MediaPacket packet = MediaPacket.make(Buffer.make(null, rawData, 0, rawData.length));
+		MediaPacket packet = MediaPacket.make(Buffer.make(null, rawData, rawData.arrayOffset(), rawData.array().length));
 		
 		packet.setStreamIndex(index);
 		packet.setFlags(flags);

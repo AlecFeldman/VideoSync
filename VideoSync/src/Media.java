@@ -93,12 +93,11 @@ public class Media
 		mediaData.put(mediaKey).object(streamData).start();
 		
 		video = new RunVideo(videoDecoder, mediaData, mediaKey, isMediaRead);
-		audio = new RunAudio(audioDecoder, mediaData, mediaKey, isMediaRead);
-		
 		videoThread = new Thread(video);
-		audioThread = new Thread(audio);
-		
 		videoThread.start();
+		
+		audio = new RunAudio(audioDecoder, mediaData, mediaKey, isMediaRead);
+		audioThread = new Thread(audio);
 		audioThread.start();
 		
 		while (mediaContainer.read(packet) >= 0)
@@ -131,18 +130,15 @@ public class Media
 		streamData = (SerializedStream) mediaGet.data().object();
 		
 		videoIndex = streamData.getVideoIndex();
-		//audioIndex = streamData.getAudioIndex();
-		
 		videoDecoder = streamData.getVideoDecoder();
-		//audioDecoder = streamData.getAudioDecoder();
-		
 		video = new RunVideo(videoDecoder);
-		//audio = new RunAudio(audioDecoder);
-		
 		videoThread = new Thread(video);
-		//audioThread = new Thread(audio);
-		
 		videoThread.start();
+		
+		//audioIndex = streamData.getAudioIndex();
+		//audioDecoder = streamData.getAudioDecoder();
+		//audio = new RunAudio(audioDecoder);
+		//audioThread = new Thread(audio);
 		//audioThread.start();
 		
 		client.objectDataReply(new ObjectDataReply()
