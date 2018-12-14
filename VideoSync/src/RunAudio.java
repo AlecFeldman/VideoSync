@@ -41,7 +41,7 @@ public class RunAudio implements Runnable
 	public RunAudio(Decoder audioDecoder)
 	{
 		this.audioDecoder = audioDecoder;
-		isMediaRead = new AtomicBoolean(true);
+		isMediaRead = new AtomicBoolean(false);
 		isMaster = false;
 	}
 	

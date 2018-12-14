@@ -41,7 +41,7 @@ public class RunVideo implements Runnable
 	public RunVideo(Decoder videoDecoder)
 	{
 		this.videoDecoder = videoDecoder;
-		isMediaRead = new AtomicBoolean(true);
+		isMediaRead = new AtomicBoolean(false);
 		isMaster = false;
 	}
 	
