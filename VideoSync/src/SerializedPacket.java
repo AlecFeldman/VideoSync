@@ -5,7 +5,7 @@ import io.humble.video.MediaPacket;
 import io.humble.video.Rational;
 
 public class SerializedPacket implements Serializable
-{	
+{
 	private byte[] rawData;
 	
 	private int index;

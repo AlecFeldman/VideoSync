@@ -10,15 +10,16 @@ import io.humble.video.AudioChannel.Layout;
 public class SerializedStream implements Serializable
 {
 	private int videoIndex;
-	private int audioIndex;
 	private int videoCodecID;
-	private int audioCodecID;
 	private int videoFlags;
 	private int videoFlagsTwo;
-	private int audioFlags;
-	private int audioFlagsTwo;
 	private int videoWidth;
 	private int videoHeight;
+	
+	private int audioIndex;
+	private int audioCodecID;
+	private int audioFlags;
+	private int audioFlagsTwo;
 	private int audioRate;
 	private int audioChannels;
 	
@@ -32,22 +33,23 @@ public class SerializedStream implements Serializable
 	public SerializedStream(int videoIndex, int audioIndex, Decoder videoDecoder, Decoder audioDecoder)
 	{
 		this.videoIndex = videoIndex;
-		this.audioIndex = audioIndex;
 		videoCodecID = videoDecoder.getCodec().getIDAsInt();
-		audioCodecID = audioDecoder.getCodec().getIDAsInt();
 		videoFlags = videoDecoder.getFlags();
 		videoFlagsTwo = videoDecoder.getFlags2();
-		audioFlags = audioDecoder.getFlags();
-		audioFlagsTwo = audioDecoder.getFlags2();
 		videoWidth = videoDecoder.getWidth();
 		videoHeight = videoDecoder.getHeight();
 		videoFormat = videoDecoder.getPixelFormat();
+		
+		this.audioIndex = audioIndex;
+		audioCodecID = audioDecoder.getCodec().getIDAsInt();
+		audioFlags = audioDecoder.getFlags();
+		audioFlagsTwo = audioDecoder.getFlags2();
 		audioRate = audioDecoder.getSampleRate();
 		audioChannels = audioDecoder.getChannels();
 		audioLayout = audioDecoder.getChannelLayout();
 		audioFormat = audioDecoder.getSampleFormat();
 	}
-
+	
 	public int getVideoIndex()
 	{
 		return videoIndex;

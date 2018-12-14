@@ -152,7 +152,7 @@ public class Media
 			{
 				SerializedPacket packetRequest = (SerializedPacket) request;
 				
-				MediaPacket packet = packetRequest.getPacket();
+				MediaPacket packet = MediaPacket.make(packetRequest.getPacket(), true);
 				
 				if (packet.getStreamIndex() == videoIndex)
 				{
