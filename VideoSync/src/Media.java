@@ -14,7 +14,6 @@ import net.tomp2p.p2p.Peer;
 import net.tomp2p.peers.Number160;
 import net.tomp2p.peers.PeerAddress;
 import net.tomp2p.rpc.ObjectDataReply;
-import net.tomp2p.storage.Data;
 
 public class Media
 {
@@ -102,7 +101,7 @@ public class Media
 		audioThread.start();
 		
 		while (mediaContainer.read(packet) >= 0)
-		{
+		{	
 			if (packet.getStreamIndex() == videoIndex)
 			{
 				video.addPacket(packet);

@@ -2,6 +2,7 @@ import io.humble.video.Decoder;
 import io.humble.video.Codec;
 import io.humble.video.AudioFormat;
 import io.humble.video.PixelFormat;
+import io.humble.video.Rational;
 
 import java.io.Serializable;
 
@@ -15,6 +16,8 @@ public class SerializedStream implements Serializable
 	private int videoFlagsTwo;
 	private int videoWidth;
 	private int videoHeight;
+	private int videoNumerator;
+	private int videoDenominator;
 	
 	private int audioIndex;
 	private int audioCodecID;
@@ -22,6 +25,8 @@ public class SerializedStream implements Serializable
 	private int audioFlagsTwo;
 	private int audioRate;
 	private int audioChannels;
+	private int audioNumerator;
+	private int audioDenominator;
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -38,6 +43,8 @@ public class SerializedStream implements Serializable
 		videoFlagsTwo = videoDecoder.getFlags2();
 		videoWidth = videoDecoder.getWidth();
 		videoHeight = videoDecoder.getHeight();
+		videoNumerator = videoDecoder.getTimeBase().getNumerator();
+		videoDenominator = videoDecoder.getTimeBase().getDenominator();
 		videoFormat = videoDecoder.getPixelFormat();
 		
 		this.audioIndex = audioIndex;
@@ -46,6 +53,8 @@ public class SerializedStream implements Serializable
 		audioFlagsTwo = audioDecoder.getFlags2();
 		audioRate = audioDecoder.getSampleRate();
 		audioChannels = audioDecoder.getChannels();
+		audioNumerator = audioDecoder.getTimeBase().getNumerator();
+		audioDenominator = audioDecoder.getTimeBase().getDenominator();
 		audioLayout = audioDecoder.getChannelLayout();
 		audioFormat = audioDecoder.getSampleFormat();
 	}
@@ -69,6 +78,7 @@ public class SerializedStream implements Serializable
 		videoDecoder.setWidth(videoWidth);
 		videoDecoder.setHeight(videoHeight);
 		videoDecoder.setPixelFormat(videoFormat);
+		videoDecoder.setTimeBase(Rational.make(videoNumerator, videoDenominator));
 		
 		return videoDecoder;
 	}
@@ -83,6 +93,7 @@ public class SerializedStream implements Serializable
 		audioDecoder.setChannels(audioChannels);
 		audioDecoder.setChannelLayout(audioLayout);
 		audioDecoder.setSampleFormat(audioFormat);
+		audioDecoder.setTimeBase(Rational.make(audioNumerator, audioDenominator));
 		
 		return audioDecoder;
 	}
