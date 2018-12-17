@@ -6,6 +6,15 @@ import io.humble.video.Rational;
 
 public class SerializedPacket implements Serializable
 {
+	/**
+	 * @author Alec Feldman
+	 * @author Liam Gibbons	
+	 * @author Rutvi Patel
+	 * @author Nick Cheng
+	 * @version 1.0.1
+	 * @since 12/16/2018
+	 */
+	
 	private byte[] rawData;
 	
 	private int index;

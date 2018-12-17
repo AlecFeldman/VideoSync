@@ -15,6 +15,15 @@ import net.tomp2p.peers.Number160;
 
 public class RunVideo implements Runnable
 {
+	/**
+	 * @author Alec Feldman
+	 * @author Liam Gibbons	
+	 * @author Rutvi Patel
+	 * @author Nick Cheng
+	 * @version 1.0.1
+	 * @since 12/16/2018
+	 *
+	 */
 	private boolean isMaster;
 	
 	private AtomicBoolean isMediaRead;

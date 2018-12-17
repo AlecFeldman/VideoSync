@@ -10,6 +10,16 @@ import io.humble.video.AudioChannel.Layout;
 
 public class SerializedStream implements Serializable
 {
+	/**
+	 * @author Alec Feldman
+	 * @author Liam Gibbons	
+	 * @author Rutvi Patel
+	 * @author Nick Cheng
+	 * @version 1.0.1
+	 * @since 12/16/2018
+	 *
+	 */
+	
 	private int videoIndex;
 	private int videoCodecID;
 	private int videoFlags;

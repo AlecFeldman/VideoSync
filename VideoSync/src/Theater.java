@@ -14,6 +14,16 @@ public class Theater
 {
 	public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException
 	{
+		/**
+		 * @author Alec Feldman
+		 * @author Liam Gibbons	
+		 * @author Rutvi Patel
+		 * @author Nick Cheng
+		 * @version 1.0.1
+		 * @since 12/16/2018
+		 *
+		 */
+		
 		int option;
 		
 		Scanner keyboard = new Scanner(System.in);
